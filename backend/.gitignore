@@ -1,0 +1,22 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# 忽略虛擬環境
+.venv/
+
+# 忽略敏感資訊
+.env
+
+# Python 編譯檔
+__pycache__/
+*.pyc
+*.pyo
+
+# Django 靜態檔案
+staticfiles/
+media/
+
+# SQLite DB（若有）
+db.sqlite3
+
+# VS Code 設定
+.vscode/
