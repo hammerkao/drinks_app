@@ -2,9 +2,25 @@
 from rest_framework import viewsets, permissions, filters as drf_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
-
 from .models import Product, Category, Variant
-from .serializers import ProductSerializer, CategorySerializer, VariantSerializer
+from .serializers import ProductSerializer, CategorySerializer, VariantSerializer,CartSerializer,OrderSerializer
+
+from decimal import Decimal
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, permissions, status, filters as drf_filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .models import (
+    Category, Product, Variant,
+    Cart, CartItem,              # ← 這兩個一定要有
+    Order, OrderItem             # ← 這兩個一定要有
+)
+from .serializers import (
+    CategorySerializer, ProductSerializer, VariantSerializer,
+    CartSerializer, OrderSerializer
+)
 
 
 # ---- Category ----
@@ -60,3 +76,111 @@ class VariantViewSet(viewsets.ModelViewSet):
     filterset_class = VariantFilter
     search_fields = ["name"]
     ordering_fields = ["price", "name", "id"]
+
+
+
+
+class IsOwnerOrAdmin(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        user = getattr(obj, "user", None)
+        return request.user and (request.user.is_staff or user == request.user)
+
+class CartViewSet(viewsets.GenericViewSet):
+    """
+    一人一車；提供 /carts/me/ 取得或建立購物車，以及增刪改項目。
+    """
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Cart.objects.select_related("user").prefetch_related("items__product")
+        if self.request.user.is_staff:
+            return qs
+        return qs.filter(user=self.request.user)
+
+    def get_object(self):
+        cart, _ = Cart.objects.get_or_create(user=self.request.user)
+        self.check_object_permissions(self.request, cart)
+        return cart
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        cart = self.get_object()
+        return Response(self.get_serializer(cart).data)
+
+    @action(detail=False, methods=["post"], url_path="add_item")
+    def add_item(self, request):
+        cart = self.get_object()
+        product_id = request.data.get("product_id")
+        qty = int(request.data.get("qty", 1))
+        if qty <= 0:
+            return Response({"detail": "qty 必須 > 0"}, status=400)
+        product = get_object_or_404(Product, pk=product_id, is_active=True)
+        item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={"qty": qty})
+        if not created:
+            item.qty += qty
+            item.save()
+        return Response({"detail": "OK"})
+
+    @action(detail=False, methods=["patch"], url_path="update_item")
+    def update_item(self, request):
+        cart = self.get_object()
+        product_id = request.data.get("product_id")
+        qty = int(request.data.get("qty", 1))
+        item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
+        if qty <= 0:
+            item.delete()
+        else:
+            item.qty = qty
+            item.save()
+        return Response({"detail": "OK"})
+
+    @action(detail=False, methods=["post"], url_path="remove_item")
+    def remove_item(self, request):
+        cart = self.get_object()
+        product_id = request.data.get("product_id")
+        get_object_or_404(CartItem, cart=cart, product_id=product_id).delete()
+        return Response({"detail": "OK"})
+
+    @action(detail=False, methods=["delete"], url_path="clear")
+    def clear(self, request):
+        cart = self.get_object()
+        cart.items.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class OrderViewSet(viewsets.ModelViewSet):
+    """
+    列出/查看自己的訂單，建立訂單會從目前購物車產生 Order 與 OrderItem。
+    """
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Order.objects.select_related("user").prefetch_related("items__product").order_by("-id")
+        if self.request.user.is_staff:
+            return qs
+        return qs.filter(user=self.request.user)
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        # 從購物車生成訂單
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        items = list(cart.items.select_related("product"))
+        if not items:
+            return Response({"detail": "購物車是空的"}, status=400)
+
+        order = Order.objects.create(user=request.user)  # status 預設 created
+        total = Decimal("0.00")
+        bulk = []
+        for ci in items:
+            unit_price = ci.product.price
+            total += unit_price * ci.qty
+            bulk.append(OrderItem(order=order, product=ci.product, qty=ci.qty, unit_price=unit_price))
+        OrderItem.objects.bulk_create(bulk)
+        order.total = total
+        order.save()
+
+        cart.items.all().delete()  # 清空購物車
+        serializer = self.get_serializer(order)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

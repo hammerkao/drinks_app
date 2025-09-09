@@ -1,6 +1,6 @@
 # core/serializers.py
 from rest_framework import serializers
-from .models import Product, Category, Variant
+from .models import Product, Category, Variant, Cart, CartItem, Order, OrderItem
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,3 +38,41 @@ class ProductSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("Price must be >= 0.")
         return value
+
+
+class CartItemSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), write_only=True)
+    product_detail = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = CartItem
+        fields = ["id", "product", "product_detail", "qty"]
+
+    def get_product_detail(self, obj):
+        return {"id": obj.product_id, "name": obj.product.name, "price": str(obj.product.price)}
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ["id", "user", "updated_at", "items"]
+        read_only_fields = ["id", "user", "updated_at", "items"]
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_detail = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ["id", "product", "product_detail", "qty", "unit_price"]
+
+    def get_product_detail(self, obj):
+        return {"id": obj.product_id, "name": obj.product.name}
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ["id", "user", "status", "total", "created_at", "items"]
+        read_only_fields = ["id", "user", "status", "total", "created_at", "items"]

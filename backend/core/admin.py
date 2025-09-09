@@ -1,6 +1,6 @@
 # core/admin.py
 from django.contrib import admin
-from .models import Product, Category, Variant
+from .models import Product, Category, Variant, Cart, CartItem, Order, OrderItem
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -19,3 +19,20 @@ class VariantAdmin(admin.ModelAdmin):
     list_display = ("id", "product", "name", "price", "is_active")
     list_filter = ("is_active", "product")
     search_fields = ("name", "product__name")
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "updated_at")
+
+class CartItemInline(admin.TabularInline):
+    model = CartItem
+    extra = 0
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "status", "total", "created_at")
+    inlines = [OrderItemInline]

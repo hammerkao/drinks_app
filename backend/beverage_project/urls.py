@@ -22,20 +22,37 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from core.views import ProductViewSet, CategoryViewSet, VariantViewSet
+from core.views import ProductViewSet, CategoryViewSet, VariantViewSet, CartViewSet, OrderViewSet
 
 router = DefaultRouter()
 router.register(r"products", ProductViewSet, basename="product")
 router.register(r"categories", CategoryViewSet, basename="category")
 router.register(r"variants", VariantViewSet, basename="variant")
+router.register(r"carts", CartViewSet, basename="cart")
+router.register(r"orders", OrderViewSet, basename="order")
+
+# urlpatterns = router.urls
+
+
+# urlpatterns = [
+#     path("admin/", admin.site.urls),
+#     path("api/", include(router.urls)),
+#     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+#     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+#     path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+#     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+# ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include(router.urls)),
+    path('admin/', admin.site.urls),
+    path('api/', include(router.urls)),   # ← 把 router 掛在 /api/
+    
+     # ✅ 開文件用：Swagger UI 會去抓這個 schema
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # ✅ 文件頁面本身
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+
+    # 🔐（可選）JWT：在 Swagger 的「Authorize」輸入 Bearer token 會用得到
     path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
+]
