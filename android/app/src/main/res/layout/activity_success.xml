@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center">
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="下單成功" android:textStyle="bold" android:textSize="22sp"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="請至門市以現金付款並取餐" android:layout_marginTop="8dp"/>
+    <Button android:id="@+id/btnGoHome" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="回到首頁" android:layout_marginTop="12dp"/>
+</LinearLayout>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvDetailTitle"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:textStyle="bold" android:textSize="18sp"/>
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="甜度 *" android:layout_marginTop="12dp" android:textStyle="bold"/>
+        <RadioGroup android:id="@+id/rgSweet"
+            android:layout_width="match_parent" android:layout_height="wrap_content">
+            <RadioButton android:id="@+id/rbSweet0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="無糖"/>
+            <RadioButton android:id="@+id/rbSweet3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="三分糖"/>
+            <RadioButton android:id="@+id/rbSweet5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="半糖"/>
+            <RadioButton android:id="@+id/rbSweet7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="少糖"/>
+            <RadioButton android:id="@+id/rbSweet10" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="全糖"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="冰塊 *" android:layout_marginTop="12dp" android:textStyle="bold"/>
+        <RadioGroup android:id="@+id/rgIce"
+            android:layout_width="match_parent" android:layout_height="wrap_content">
+            <RadioButton android:id="@+id/rbIce0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="去冰"/>
+            <RadioButton android:id="@+id/rbIceLess" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="微冰"/>
+            <RadioButton android:id="@+id/rbIceNormal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="正常冰"/>
+            <RadioButton android:id="@+id/rbIceHot" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="熱飲"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="加料 (可複選，最多 3)" android:layout_marginTop="12dp" android:textStyle="bold"/>
+        <LinearLayout
+            android:id="@+id/layToppings"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <CheckBox android:id="@+id/cbPearl" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="珍珠 +NT$10"/>
+            <CheckBox android:id="@+id/cbCoconut" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="椰果 +NT$10"/>
+            <CheckBox android:id="@+id/cbPudding" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="布丁 +NT$15"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnAddToCart"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="加入購物車" android:layout_marginTop="16dp"/>
+    </LinearLayout>
+</ScrollView>
