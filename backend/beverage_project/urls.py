@@ -25,17 +25,18 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.views import ProductViewSet, CategoryViewSet, VariantViewSet, CartViewSet, OrderViewSet, StoreViewSet
 
 router = DefaultRouter()
-router.register(r"products", ProductViewSet, basename="product")
-router.register(r"categories", CategoryViewSet, basename="category")
-router.register(r"variants", VariantViewSet, basename="variant")
-router.register(r"carts", CartViewSet, basename="cart")
-router.register(r"orders", OrderViewSet, basename="order")
+router.register(r"categories", CategoryViewSet, basename="categories")
+router.register(r"products", ProductViewSet, basename="products")
+router.register(r"variants", VariantViewSet, basename="variants")
 router.register(r"stores", StoreViewSet, basename="stores")
+router.register(r"carts", CartViewSet, basename="carts")
+router.register(r"orders", OrderViewSet, basename="orders")
 
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("api/", include(router.urls)), 
     path("api/auth/", include("core.auth_urls")),   # ⬅ 新增這行
     
      # ✅ 開文件用：Swagger UI 會去抓這個 schema
