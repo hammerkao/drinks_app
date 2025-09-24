@@ -1,73 +1,50 @@
-package com.example.drinks.data.net
+package com.example.drinks.net
 
 import android.content.Context
-import com.example.drinks.data.json.GsonProvider.gson
-import com.example.drinks.data.store.TokenStore
-import okhttp3.Authenticator
+import com.example.drinks.store.TokenStore
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
+/**
+ * 全域 Retrofit 單例
+ * 使用方式：
+ *   val authApi = NetCore.getRetrofit(context).create(AuthApi::class.java)
+ */
 object NetCore {
-    // 模擬器連本機
-    const val BASE_URL = "http://10.0.2.2:8000/api/"
 
-    private fun authInterceptor(store: TokenStore) = Interceptor { chain ->
-        val b = chain.request().newBuilder()
-        store.access?.let { b.header("Authorization", "Bearer $it") }
-        chain.proceed(b.build())
-    }
+    // 依你的 DRF 服務調整
+    private const val BASE_URL = "http://10.0.2.2:8000/api/"  // 模擬器連本機Django
 
-    // 401 時用 refresh 換 access，成功後自動重送一次
-    private fun jwtAuthenticator(store: TokenStore) = Authenticator { _, resp ->
-        if (resp.request.header("Authorization") == null || resp.priorResponse != null) return@Authenticator null
-        val refresh = store.refresh ?: return@Authenticator null
-        val newAccess = try { refreshAccess(refresh) } catch (_: Exception) { null }
-        if (newAccess != null) {
-            store.access = newAccess
-            resp.request.newBuilder().header("Authorization", "Bearer $newAccess").build()
-        } else {
-            store.clear(); null
+    fun getRetrofit(context: Context): Retrofit {
+        val tokenStore = TokenStore(context.applicationContext)
+
+        val authInterceptor = Interceptor { chain ->
+            val original = chain.request()
+            val token = tokenStore.get()
+            val req = if (!token.isNullOrBlank()) {
+                original.newBuilder()
+                    .addHeader("Authorization", "Bearer $token") // 若用 DRF TokenAuth 改成 "Token $token"
+                    .build()
+            } else original
+            chain.proceed(req)
         }
-    }
 
-    // 同步 refresh（Authenticator 不能用 suspend）
-    private fun refreshAccess(refresh: String): String? {
-        val client = OkHttpClient()
-        val body = gson.toJson(mapOf("refresh" to refresh))
-            .toRequestBody("application/json; charset=utf-8".toMediaType())
-        val req = Request.Builder()
-            .url("${BASE_URL}auth/token/refresh/")
-            .post(body)
-            .build()
-        client.newCall(req).execute().use { r ->
-            if (!r.isSuccessful) return null
-            val node = gson.fromJson(r.body!!.charStream(), TokenResp::class.java)
-            return node.access
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
         }
-    }
 
-    fun api(ctx: Context): Api {
-        val store = TokenStore(ctx)
-        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
         val client = OkHttpClient.Builder()
-            .addInterceptor(authInterceptor(store))
-            .authenticator(jwtAuthenticator(store))
+            .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .build()
-        return Api(BASE_URL, client)
-    }
 
-    fun auth(ctx: Context): AuthApi {
-        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
-        val client = OkHttpClient.Builder().addInterceptor(logging).build()
-        return AuthApi(BASE_URL, client)
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
     }
 }
-
-// 為了 refreshAccess 用到
-data class TokenResp(val access: String, val refresh: String? = null)

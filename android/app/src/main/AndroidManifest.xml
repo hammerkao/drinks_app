@@ -33,6 +33,8 @@
         <activity android:name=".ui.CartActivity" />
         <activity android:name=".ui.CheckoutActivity" />
         <activity android:name=".ui.SuccessActivity" />
+        <activity android:name=".ui.RegisterSuccessActivity"/>
+        <activity android:name=".ui.RegisterActivity"/>
     </application>
 
 </manifest>

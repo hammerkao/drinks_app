@@ -31,21 +31,11 @@ router.register(r"variants", VariantViewSet, basename="variant")
 router.register(r"carts", CartViewSet, basename="cart")
 router.register(r"orders", OrderViewSet, basename="order")
 
-# urlpatterns = router.urls
 
-
-# urlpatterns = [
-#     path("admin/", admin.site.urls),
-#     path("api/", include(router.urls)),
-#     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-#     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-#     path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-#     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-# ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),   # ← 把 router 掛在 /api/
+    path("api/auth/", include("core.auth_urls")),   # ⬅ 新增這行
     
      # ✅ 開文件用：Swagger UI 會去抓這個 schema
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

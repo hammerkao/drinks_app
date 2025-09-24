@@ -2,4 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="suntea_primary">#D8B04A</color>
+    <color name="suntea_primary_dark">#B38F3B</color>
+    <color name="suntea_on_primary">#FFFFFFFF</color>
+    <color name="suntea_text">#333333</color>
+    <color name="suntea_hint">#9E9E9E</color>
+    <color name="suntea_bg">#FFFFFF</color>
 </resources>

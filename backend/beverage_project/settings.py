@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # 第三方
     "corsheaders",
     "rest_framework",
+    "rest_framework_simplejwt",
     "django_filters",
     "drf_spectacular",
 
