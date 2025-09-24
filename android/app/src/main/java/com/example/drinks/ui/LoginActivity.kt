@@ -1,7 +1,9 @@
 package com.example.drinks.ui
 
 import android.content.Intent
+import retrofit2.HttpException
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ProgressBar
@@ -13,12 +15,14 @@ import com.example.drinks.net.AuthApi
 import com.example.drinks.net.NetCore
 import com.example.drinks.store.TokenStore
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var etPhone: EditText
     private lateinit var etPassword: EditText
     private lateinit var progress: ProgressBar
     private val authApi: AuthApi by lazy { NetCore.getRetrofit(this).create(AuthApi::class.java) }
+
     private val tokenStore by lazy { TokenStore(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,16 +49,35 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun doLogin(phone: String, password: String) {
-        progress.visibility = View.VISIBLE
+        //（可選）避免用舊 token 登入，先清掉
+        tokenStore.clear()
+
+        // progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
                 val resp = authApi.login(mapOf("phone" to phone, "password" to password))
                 tokenStore.save(resp.token)
-                startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+
+                val it = Intent(this@LoginActivity, MainActivity::class.java)
+                it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(it)
                 finish()
+
+            } catch (e: HttpException) {
+                val body = e.response()?.errorBody()?.string()
+                Log.e("Login", "HTTP ${e.code()} body=$body", e)
+                Toast.makeText(this@LoginActivity, "登入失敗：${e.code()}", Toast.LENGTH_SHORT).show()
+            } catch (e: IOException) {
+                Log.e("Login", "network error", e)
+                Toast.makeText(this@LoginActivity, "網路錯誤，請檢查連線", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this@LoginActivity, "登入失敗：${e.message}", Toast.LENGTH_SHORT).show()
-            } finally { progress.visibility = View.GONE }
+                Log.e("Login", "unknown error", e)
+                Toast.makeText(this@LoginActivity, "發生錯誤：${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                // progress.visibility = View.GONE
+            }
         }
     }
 }
+
+

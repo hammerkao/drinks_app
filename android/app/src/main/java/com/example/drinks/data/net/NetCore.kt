@@ -8,26 +8,27 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-/**
- * 全域 Retrofit 單例
- * 使用方式：
- *   val authApi = NetCore.getRetrofit(context).create(AuthApi::class.java)
- */
 object NetCore {
-    // 改成 public，讓別處取得
-    const val BASE_URL = "http://10.0.2.2:8000/api/"
+    // 開發用：模擬器連本機 Django
+    const val BASE_URL: String = "http://10.0.2.2:8000/api/"
 
+    /** 共用 OkHttpClient（自動帶 Bearer；略過 /api/auth/） */
     fun buildOkHttp(context: Context): OkHttpClient {
-        val tokenStore = TokenStore(context.applicationContext)
+        val appCtx = context.applicationContext
+        val tokenStore = TokenStore(appCtx)
 
         val authInterceptor = Interceptor { chain ->
             val original = chain.request()
+            val path = original.url.encodedPath // e.g. /api/auth/login/ or /api/stores/
+            val isAuthEndpoint = path.contains("/api/auth/")
+
             val token = tokenStore.get()
-            val req = if (!token.isNullOrBlank()) {
+            val req = if (!isAuthEndpoint && !token.isNullOrBlank()) {
                 original.newBuilder()
                     .addHeader("Authorization", "Bearer $token")
                     .build()
             } else original
+
             chain.proceed(req)
         }
 
@@ -41,13 +42,12 @@ object NetCore {
             .build()
     }
 
+    /** 取得 Retrofit 實例（給 AuthApi / 其他 Retrofit 服務用） */
     fun getRetrofit(context: Context): Retrofit {
-        val client = buildOkHttp(context)
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(client)
+            .client(buildOkHttp(context))
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 }
-

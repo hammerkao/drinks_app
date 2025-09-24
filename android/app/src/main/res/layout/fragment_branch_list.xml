@@ -10,4 +10,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="16dp"/>
+
+    <TextView
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="目前沒有可用分店"
+        android:gravity="center"
+        android:visibility="gone"
+        android:textSize="18sp"
+        android:padding="16dp" />
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

@@ -1,20 +1,27 @@
 package com.example.drinks.ui.branch
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.drinks.R
 import com.example.drinks.data.model.BranchDto
 import com.example.drinks.data.net.Api
 import com.example.drinks.net.NetCore
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class BranchListFragment : Fragment() {
+
+    private lateinit var emptyView: TextView
+    private lateinit var recyclerView: RecyclerView
 
     // 這裡宣告 adapter
     private lateinit var adapter: BranchAdapter
@@ -37,29 +44,37 @@ class BranchListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 初始化 RecyclerView
-        val rv = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvBranches)
-        adapter = BranchAdapter(onClickOrder = { branch ->
-            // 點擊事件：之後導到商品頁
-            Toast.makeText(requireContext(), "下單：${branch.name}", Toast.LENGTH_SHORT).show()
-        })
-        rv.layoutManager = LinearLayoutManager(requireContext())
-        rv.adapter = adapter
+        emptyView = view.findViewById(R.id.emptyView)
+        recyclerView = view.findViewById(R.id.rvBranches)
 
-        // 進入頁面就載入資料
-        loadData { /* loading 完成後做額外處理 */ }
+        // 初次載入時隱藏
+        emptyView.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
+    }
+
+    private fun updateUI(list: List<BranchDto>) {
+        if (list.isEmpty()) {
+            emptyView.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            adapter.submit(list)  // 更新 RecyclerView 資料
+        }
     }
 
     private fun loadData(done: () -> Unit) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val list = api.getBranches() // <-- 這裡已經存在
-                adapter.submit(list)         // <-- 這裡不會再報錯
+                val list = api.getBranches()
+                adapter.submit(list)
+            } catch (e: IOException) {
+                Log.e("BranchList", "network/http error", e)   // 會看到 401/403 內容
+                Toast.makeText(requireContext(), "載入失敗：網路/權限 (${e.message})", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "載入失敗：${e.message}", Toast.LENGTH_SHORT).show()
-            } finally {
-                done()
-            }
+                Log.e("BranchList", "parse error", e)          // 例如 Expected BEGIN_ARRAY…
+                Toast.makeText(requireContext(), "載入失敗：資料解析錯誤", Toast.LENGTH_LONG).show()
+            } finally { done() }
         }
     }
 }

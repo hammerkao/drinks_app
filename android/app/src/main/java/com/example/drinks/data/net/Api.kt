@@ -133,5 +133,43 @@ class Api(private val base: String, private val client: OkHttpClient) {
 
 
 
-    suspend fun getBranches(): List<BranchDto> = get("stores/")
+
+
+    suspend fun getBranches(): List<BranchDto> = withContext(Dispatchers.IO) {
+        val url = (base + "stores/").toHttpUrlOrNull()!!
+        val req = Request.Builder().url(url).get().build()
+        client.newCall(req).execute().use { resp ->
+            val bodyStr = resp.body?.string() ?: ""
+            if (!resp.isSuccessful) {
+                // 把錯誤訊息打出來，方便定位 401/403/500
+                throw IOException("GET /stores/ -> ${resp.code} ${resp.message}. body=$bodyStr")
+            }
+
+            val element = JsonParser.parseString(bodyStr)
+            val listType = object : TypeToken<List<BranchDto>>() {}.type
+
+            when {
+                element.isJsonArray -> gson.fromJson<List<BranchDto>>(element, listType)
+
+                element.isJsonObject -> {
+                    val obj = element.asJsonObject
+                    // 常見分頁 keys
+                    val results = when {
+                        obj.has("results") -> obj["results"]
+                        obj.has("data")    -> obj["data"]
+                        else               -> null
+                    }
+                    if (results != null && results.isJsonArray) {
+                        gson.fromJson(results, listType)
+                    } else {
+                        // 找第一個是 JsonArray 的欄位做為 fallback
+                        val firstArray = obj.entrySet().firstOrNull { it.value.isJsonArray }?.value
+                        if (firstArray != null) gson.fromJson(firstArray, listType) else emptyList()
+                    }
+                }
+
+                else -> emptyList()
+            }
+        }
+    }
 }
