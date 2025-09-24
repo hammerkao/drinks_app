@@ -13,6 +13,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
+
 class Api(private val base: String, private val client: OkHttpClient) {
 
     private suspend inline fun <reified T> parse(r: Response): T {
@@ -132,5 +133,5 @@ class Api(private val base: String, private val client: OkHttpClient) {
 
 
 
-    suspend fun createOrder(): OrderDTO = send("POST", "orders/")
+    suspend fun getBranches(): List<BranchDto> = get("stores/")
 }

@@ -50,8 +50,8 @@ class LoginActivity : AppCompatActivity() {
             try {
                 val resp = authApi.login(mapOf("phone" to phone, "password" to password))
                 tokenStore.save(resp.token)
-                Toast.makeText(this@LoginActivity, "登入成功", Toast.LENGTH_SHORT).show()
-                // TODO: 導頁
+                startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                finish()
             } catch (e: Exception) {
                 Toast.makeText(this@LoginActivity, "登入失敗：${e.message}", Toast.LENGTH_SHORT).show()
             } finally { progress.visibility = View.GONE }

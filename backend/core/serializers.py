@@ -1,6 +1,6 @@
 # core/serializers.py
 from rest_framework import serializers
-from .models import Product, Category, Variant, Cart, CartItem, Order, OrderItem
+from .models import Product, Category, Variant, Cart, CartItem, Order, OrderItem, Store
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -76,3 +76,8 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ["id", "user", "status", "total", "created_at", "items"]
         read_only_fields = ["id", "user", "status", "total", "created_at", "items"]
+
+class StoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Store
+        fields = ["id", "name", "phone", "address", "open_hours", "status"]

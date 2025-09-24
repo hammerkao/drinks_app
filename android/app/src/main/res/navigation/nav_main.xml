@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/nav_branch_list">
+
+    <fragment
+        android:id="@+id/nav_branch_list"
+        android:name="com.example.drinks.ui.branch.BranchListFragment"
+        android:label="選擇分店" />
+
+    <fragment android:id="@+id/nav_profile"
+        android:name="com.example.drinks.ui.profile.ProfileFragment"
+        android:label="我的" />
+
+    <fragment android:id="@+id/nav_orders"
+        android:name="com.example.drinks.ui.orders.OrdersFragment"
+        android:label="訂單" />
+
+    <fragment android:id="@+id/nav_cart"
+        android:name="com.example.drinks.ui.cart.CartFragment"
+        android:label="購物車" />
+</navigation>

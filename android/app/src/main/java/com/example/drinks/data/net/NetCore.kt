@@ -14,11 +14,10 @@ import retrofit2.converter.gson.GsonConverterFactory
  *   val authApi = NetCore.getRetrofit(context).create(AuthApi::class.java)
  */
 object NetCore {
+    // 改成 public，讓別處取得
+    const val BASE_URL = "http://10.0.2.2:8000/api/"
 
-    // 依你的 DRF 服務調整
-    private const val BASE_URL = "http://10.0.2.2:8000/api/"  // 模擬器連本機Django
-
-    fun getRetrofit(context: Context): Retrofit {
+    fun buildOkHttp(context: Context): OkHttpClient {
         val tokenStore = TokenStore(context.applicationContext)
 
         val authInterceptor = Interceptor { chain ->
@@ -26,7 +25,7 @@ object NetCore {
             val token = tokenStore.get()
             val req = if (!token.isNullOrBlank()) {
                 original.newBuilder()
-                    .addHeader("Authorization", "Bearer $token") // 若用 DRF TokenAuth 改成 "Token $token"
+                    .addHeader("Authorization", "Bearer $token")
                     .build()
             } else original
             chain.proceed(req)
@@ -36,11 +35,14 @@ object NetCore {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
-        val client = OkHttpClient.Builder()
+        return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .build()
+    }
 
+    fun getRetrofit(context: Context): Retrofit {
+        val client = buildOkHttp(context)
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(client)
@@ -48,3 +50,4 @@ object NetCore {
             .build()
     }
 }
+

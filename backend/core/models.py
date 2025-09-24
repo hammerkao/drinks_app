@@ -105,3 +105,12 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} x {self.qty} @ {self.unit_price}"
+
+class Store(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.CharField(max_length=200, blank=True)
+    open_hours = models.CharField(max_length=100, blank=True)  # "09:00 - 22:00"
+    status = models.CharField(max_length=20, blank=True)       # "營業中/休息中"
+
+    def __str__(self): return self.name

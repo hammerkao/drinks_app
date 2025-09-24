@@ -1,9 +1,11 @@
 # core/views.py
 from rest_framework import viewsets, permissions, filters as drf_filters
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
-from .models import Product, Category, Variant
-from .serializers import ProductSerializer, CategorySerializer, VariantSerializer,CartSerializer,OrderSerializer
+from .models import Product, Category, Variant, Store
+from .serializers import ProductSerializer, CategorySerializer, VariantSerializer,CartSerializer,OrderSerializer,StoreSerializer
 
 from decimal import Decimal
 from django.db import transaction
@@ -15,12 +17,18 @@ from rest_framework.response import Response
 from .models import (
     Category, Product, Variant,
     Cart, CartItem,              # ← 這兩個一定要有
-    Order, OrderItem             # ← 這兩個一定要有
+    Order, OrderItem, Store            # ← 這兩個一定要有
 )
 from .serializers import (
     CategorySerializer, ProductSerializer, VariantSerializer,
-    CartSerializer, OrderSerializer
+    CartSerializer, OrderSerializer , StoreSerializer
 )
+
+
+class StoreViewSet(ReadOnlyModelViewSet):
+    queryset = Store.objects.all().order_by("id")
+    serializer_class = StoreSerializer
+    permission_classes = [IsAuthenticated]
 
 
 # ---- Category ----
