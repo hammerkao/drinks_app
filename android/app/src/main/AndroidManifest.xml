@@ -1,0 +1,38 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:usesCleartextTraffic="true"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Drinks">
+
+        <!-- 啟動頁：一定 exported="true" -->0
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 登入後目標頁：顯式 Intent 也建議設 true -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true" />
+
+        <!-- 其餘僅供 app 內部跳轉，可設 false -->
+        <activity android:name=".ui.RegisterActivity" android:exported="false"/>
+        <activity android:name=".ui.RegisterSuccessActivity" android:exported="false"/>
+        <activity android:name=".ui.HomeActivity" android:exported="false"/>
+        <activity android:name=".ui.ProductListActivity" android:exported="false"/>
+        <activity android:name=".ui.ProductDetailActivity" android:exported="false"/>
+        <activity android:name=".ui.CartActivity" android:exported="false"/>
+        <activity android:name=".ui.CheckoutActivity" android:exported="false"/>
+        <activity android:name=".ui.SuccessActivity" android:exported="false"/>
+
+    </application>
+</manifest>
