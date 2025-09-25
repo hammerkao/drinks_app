@@ -2,22 +2,28 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_main"
-    app:startDestination="@id/nav_branch_list">
+    app:startDestination="@id/dest_select_store">
 
+    <!-- 選分店（原 SelectStoreActivity → 改 Fragment） -->
     <fragment
-        android:id="@+id/nav_branch_list"
-        android:name="com.example.drinks.ui.branch.BranchListFragment"
+        android:id="@+id/dest_select_store"
+        android:name="com.example.drinks.ui.SelectStoreFragment"
         android:label="選擇分店" />
 
-    <fragment android:id="@+id/nav_profile"
-        android:name="com.example.drinks.ui.profile.ProfileFragment"
-        android:label="我的" />
+    <!-- Home（先給一個占位，之後把 HomeActivity 改成 Fragment） -->
+    <fragment
+        android:id="@+id/dest_home"
+        android:name="com.example.drinks.ui.HomeFragment"
+        android:label="首頁" />
 
-    <fragment android:id="@+id/nav_orders"
-        android:name="com.example.drinks.ui.orders.OrdersFragment"
-        android:label="訂單" />
-
-    <fragment android:id="@+id/nav_cart"
-        android:name="com.example.drinks.ui.cart.CartFragment"
+    <!-- Cart / Profile … 你要的頁面都能加 -->
+    <fragment
+        android:id="@+id/dest_cart"
+        android:name="com.example.drinks.ui.CartFragment"
         android:label="購物車" />
+
+    <fragment
+        android:id="@+id/dest_profile"
+        android:name="com.example.drinks.ui.ProfileFragment"
+        android:label="我" />
 </navigation>

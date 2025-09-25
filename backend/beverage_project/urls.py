@@ -24,6 +24,9 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.views import ProductViewSet, CategoryViewSet, VariantViewSet, CartViewSet, OrderViewSet, StoreViewSet
 
+
+
+
 router = DefaultRouter()
 router.register(r"categories", CategoryViewSet, basename="categories")
 router.register(r"products", ProductViewSet, basename="products")
@@ -31,6 +34,7 @@ router.register(r"variants", VariantViewSet, basename="variants")
 router.register(r"stores", StoreViewSet, basename="stores")
 router.register(r"carts", CartViewSet, basename="carts")
 router.register(r"orders", OrderViewSet, basename="orders")
+router.register(r'stores', StoreViewSet, basename='store')
 
 
 

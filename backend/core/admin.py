@@ -1,6 +1,6 @@
 # core/admin.py
 from django.contrib import admin
-from .models import Product, Category, Variant, Cart, CartItem, Order, OrderItem
+from .models import Product, Category, Variant, Cart, CartItem, Order, OrderItem, Store
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -36,3 +36,10 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "status", "total", "created_at")
     inlines = [OrderItemInline]
+
+@admin.register(Store)
+class StoreAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "status", "phone")
+    list_filter = ("status",)
+    search_fields = ("name", "address", "phone", "open_hours")
+    ordering = ("id",)

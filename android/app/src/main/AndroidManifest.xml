@@ -9,7 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.Drinks">
 
-        <!-- 啟動頁：一定 exported="true" -->0
+        <!-- 啟動頁：一定 exported="true" -->
         <activity
             android:name=".ui.LoginActivity"
             android:exported="true">
@@ -33,6 +33,7 @@
         <activity android:name=".ui.CartActivity" android:exported="false"/>
         <activity android:name=".ui.CheckoutActivity" android:exported="false"/>
         <activity android:name=".ui.SuccessActivity" android:exported="false"/>
+
 
     </application>
 </manifest>

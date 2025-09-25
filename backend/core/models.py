@@ -4,6 +4,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
 
 
 User = settings.AUTH_USER_MODEL
@@ -114,3 +116,5 @@ class Store(models.Model):
     status = models.CharField(max_length=20, blank=True)       # "營業中/休息中"
 
     def __str__(self): return self.name
+
+ 

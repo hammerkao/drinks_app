@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/space_s">
+
+    <LinearLayout
+        android:id="@+id/card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_store_card"
+        android:padding="@dimen/space_l"
+        android:orientation="vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 第一行：標題 + 金色「下單去」 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/storeName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="台北大安店"
+                android:textColor="@color/title_text"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/btnOrder"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/btnOrder"
+                app:layout_goneMarginEnd="@dimen/space_m"/>
+
+            <TextView
+                android:id="@+id/btnOrder"
+                android:layout_width="96dp"
+                android:layout_height="@dimen/btn_height"
+                android:gravity="center"
+                android:text="下單去"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:background="@drawable/bg_btn_gold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 第二行：狀態 Pills -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="@dimen/space_m">
+
+            <TextView
+                android:id="@+id/tagOpen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip"
+                android:backgroundTint="@color/suntea_hint"
+                android:text="營業中"
+                android:textColor="@color/chip_text"
+                android:textSize="14sp" />
+
+            <Space
+                android:layout_width="@dimen/space_s"
+                android:layout_height="0dp"/>
+
+            <TextView
+                android:id="@+id/tagPickup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/suntea_hint"
+                android:text="自取"
+                android:textColor="@color/chip_text"
+                android:textSize="14sp"
+                android:background="@drawable/bg_chip"/>
+        </LinearLayout>
+
+        <!-- 第三行：「看更多 ▾ / 收起 ∧」 -->
+        <TextView
+            android:id="@+id/toggleMore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_s"
+            android:text="看更多 ▾"
+            android:textColor="@color/body_text"
+            android:textSize="14sp"/>
+
+        <!-- 展開區：電話/地址/營業時間 -->
+        <LinearLayout
+            android:id="@+id/expandArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="@dimen/space_s">
+
+            <TextView
+                android:id="@+id/storePhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/body_text"
+                android:text="電話：02-12345678"/>
+
+            <TextView
+                android:id="@+id/storeAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/body_text"
+                android:layout_marginTop="2dp"
+                android:text="台北市大安區XX路"/>
+
+            <TextView
+                android:id="@+id/storeHours"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/body_text"
+                android:layout_marginTop="2dp"
+                android:text="營業時間：09:00 - 22:00"/>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

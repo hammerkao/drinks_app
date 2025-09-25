@@ -5,22 +5,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <fragment
-        android:id="@+id/nav_host_fragment"
+    <!-- 內容容器：NavHostFragment -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/navHost"
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_main" />
 
+    <!-- 底部導覽（你原本的 menu_bottom） -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_nav"
+        android:id="@+id/bottomNav"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_gravity="bottom"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
         app:menu="@menu/menu_bottom_nav"
-        app:itemIconTint="@color/black"
-        app:itemTextColor="@color/black"
-        app:itemRippleColor="@color/suntea_primary"
-        android:background="@android:color/white"/>
+        app:layout_anchorGravity="bottom"
+        android:layout_gravity="bottom"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

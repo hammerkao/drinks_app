@@ -6,6 +6,15 @@
     <color name="suntea_primary_dark">#B38F3B</color>
     <color name="suntea_on_primary">#FFFFFFFF</color>
     <color name="suntea_text">#333333</color>
-    <color name="suntea_hint">#9E9E9E</color>
+    <color name="suntea_hint">#DEDEDE</color>
     <color name="suntea_bg">#FFFFFF</color>
+
+    <color name="brand_gold">#E1B864</color>
+    <color name="brand_gold_dark">#C49E50</color>
+    <color name="chip_bg">#EFEFEF</color>
+    <color name="chip_text">#555555</color>
+    <color name="card_bg">#EDEDED</color>
+    <color name="title_text">#222222</color>
+    <color name="body_text">#666666</color>
+
 </resources>

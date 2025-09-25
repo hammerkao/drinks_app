@@ -19,10 +19,20 @@ from .serializers import (
 )
 
 
-class StoreViewSet(ReadOnlyModelViewSet):
+from rest_framework.filters import SearchFilter, OrderingFilter
+
+
+
+
+class StoreViewSet(viewsets.ModelViewSet):
     queryset = Store.objects.all().order_by("id")
     serializer_class = StoreSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    # 依你的欄位調整（open_hours 通常不用篩選；status 常用來啟用/停用）
+    filterset_fields = ["status"]
+    search_fields = ["name", "address", "phone", "open_hours"]
+    ordering_fields = ["id", "name"]
 
 
 # ---- Category ----

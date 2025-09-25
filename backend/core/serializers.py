@@ -81,3 +81,4 @@ class StoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Store
         fields = ["id", "name", "phone", "address", "open_hours", "status"]
+

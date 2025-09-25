@@ -16,6 +16,7 @@ import com.example.drinks.net.NetCore
 import com.example.drinks.store.TokenStore
 import kotlinx.coroutines.launch
 import java.io.IOException
+import kotlin.jvm.java
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var etPhone: EditText
@@ -56,6 +57,7 @@ class LoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val resp = authApi.login(mapOf("phone" to phone, "password" to password))
+                // 注意：如果你的後端回傳是 {"access": "..."}，要改成 resp.access
                 tokenStore.save(resp.token)
 
                 val it = Intent(this@LoginActivity, MainActivity::class.java)
