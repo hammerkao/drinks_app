@@ -2,34 +2,46 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
     android:background="@color/suntea_bg">
 
+    <!-- 兩行標題 -->
     <TextView
         android:id="@+id/tvSuccess"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="250dp"
+        android:layout_marginBottom="24dp"
+        android:lineSpacingExtra="2dp"
         android:text="註冊成功！\n開始點餐"
         android:textAlignment="center"
-        android:textColor="@color/suntea_text"
-        android:textSize="22sp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/btnOk"
-        app:layout_constraintStart_toStartOf="parent"
+        android:textColor="@color/title_text"
+        android:textSize="42sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/btnOk"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
+    <!-- 確認按鈕 -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnOk"
         android:layout_width="0dp"
         android:layout_height="48dp"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="50dp"
+        android:layout_marginEnd="48dp"
         android:text="確認"
         android:textAllCaps="false"
         android:textColor="@color/suntea_on_primary"
         app:backgroundTint="@color/suntea_primary"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:cornerRadius="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@+id/tvSuccess" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

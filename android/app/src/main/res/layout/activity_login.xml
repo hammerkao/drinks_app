@@ -7,46 +7,72 @@
     android:background="@color/suntea_bg"
     android:padding="24dp">
 
-    <!-- LOGO 佔位：你之後把 src 換成實際 LOGO 即可 -->
+    <!-- LOGO -->
     <ImageView
         android:id="@+id/imgLogo"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:layout_width="wrap_content"
+        android:layout_height="250dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="80dp"
+        android:layout_marginEnd="32dp"
+        android:background="@android:color/transparent"
         android:contentDescription="@string/app_name"
         android:scaleType="centerInside"
-        android:background="@android:color/transparent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/etPhone"
+        app:layout_constraintBottom_toTopOf="@+id/tilPhone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"/>
+        app:layout_constraintVertical_chainStyle="packed"
+        app:srcCompat="@drawable/suntea_logo" />
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/etPhone"
+    <!-- 手機號碼（OutlinedBox） -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPhone"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="手機號碼"
-        android:inputType="phone"
-        android:textColor="@color/suntea_text"
-        android:textColorHint="@color/suntea_hint"
+        android:layout_marginTop="32dp"
+        app:boxStrokeColor="@color/suntea_primary"
+        app:hintTextColor="@color/suntea_hint"
         app:layout_constraintTop_toBottomOf="@id/imgLogo"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="32dp"/>
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/etPassword"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="手機號碼"
+            android:inputType="phone"
+            android:textColor="@color/suntea_text"
+            android:textColorHint="@color/suntea_hint" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 密碼（OutlinedBox + 顯示/隱藏密碼） -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPassword"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="密碼"
-        android:inputType="textPassword"
-        android:textColor="@color/suntea_text"
-        android:textColorHint="@color/suntea_hint"
-        app:layout_constraintTop_toBottomOf="@id/etPhone"
+        android:layout_marginTop="16dp"
+        app:endIconMode="password_toggle"
+        app:boxStrokeColor="@color/suntea_primary"
+        app:hintTextColor="@color/suntea_hint"
+        app:layout_constraintTop_toBottomOf="@id/tilPhone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="密碼"
+            android:inputType="textPassword"
+            android:textColor="@color/suntea_text"
+            android:textColorHint="@color/suntea_hint" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 登入 -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogin"
         style="@style/Widget.MaterialComponents.Button"
@@ -54,13 +80,14 @@
         android:layout_height="48dp"
         android:text="登入"
         android:textAllCaps="false"
-        android:textColor="@color/suntea_on_primary"
+        android:background="@drawable/bg_btn_gold"
         app:backgroundTint="@color/suntea_primary"
-        app:layout_constraintTop_toBottomOf="@id/etPassword"
+        app:layout_constraintTop_toBottomOf="@id/tilPassword"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"/>
+        android:layout_marginTop="48dp"/>
 
+    <!-- 註冊 -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnGoRegister"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -68,13 +95,15 @@
         android:layout_height="48dp"
         android:text="註冊"
         android:textAllCaps="false"
-        app:strokeColor="@color/suntea_primary"
-        app:iconTint="@color/suntea_primary"
+        android:textColor="@color/suntea_on_primary"
+        android:background="@drawable/bg_btn_gold"
+        app:backgroundTint="@color/suntea_primary"
         app:layout_constraintTop_toBottomOf="@id/btnLogin"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="12dp"/>
 
+    <!-- 載入圈圈 -->
     <ProgressBar
         android:id="@+id/progress"
         style="?android:attr/progressBarStyleLarge"
