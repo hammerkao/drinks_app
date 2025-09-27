@@ -23,6 +23,9 @@ from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.views import ProductViewSet, CategoryViewSet, VariantViewSet, CartViewSet, OrderViewSet, StoreViewSet
+from django.contrib import admin
+from django.urls import path, include
+
 
 
 
@@ -41,6 +44,7 @@ router.register(r'stores', StoreViewSet, basename='store')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include(router.urls)), 
+    path("api/", include("core.urls")),
     path("api/auth/", include("core.auth_urls")),   # ⬅ 新增這行
     
      # ✅ 開文件用：Swagger UI 會去抓這個 schema
@@ -52,3 +56,6 @@ urlpatterns = [
     path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

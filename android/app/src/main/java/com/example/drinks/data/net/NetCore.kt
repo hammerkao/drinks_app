@@ -11,8 +11,15 @@ import java.util.concurrent.TimeUnit
 object NetCore {
     // 開發用：模擬器連本機 Django
     const val BASE_URL: String = "http://10.0.2.2:8000/api/"
+    const val BASE_HOST: String = "http://10.0.2.2:8000/"
     @Volatile var accessToken: String? = null
     /** 共用 OkHttpClient（自動帶 Bearer；略過 /api/auth/） */
+
+    fun toAbsoluteUrl(path: String?): String? {
+        if (path.isNullOrBlank()) return null
+        return if (path.startsWith("http", true)) path
+        else BASE_HOST.trimEnd('/') + "/" + path.trimStart('/')
+    }
     fun buildOkHttp(context: Context): OkHttpClient {
         val appCtx = context.applicationContext
         val tokenStore = TokenStore(appCtx)

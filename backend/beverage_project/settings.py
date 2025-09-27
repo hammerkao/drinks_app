@@ -41,7 +41,7 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 # 安裝項目
 INSTALLED_APPS = [
-"django.contrib.admin",
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -175,6 +175,7 @@ CORS_ALLOWED_ORIGINS = [
 
 
 MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = BASE_DIR / "media"

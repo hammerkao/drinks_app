@@ -14,30 +14,28 @@ class VariantSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), allow_null=True, required=False
-    )
-    category_name = serializers.SerializerMethodField()
-    image = serializers.ImageField(required=False, allow_null=True)
-    variants = VariantSerializer(many=True, read_only=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            "id", "name", "price", "is_active",
-            "created_at", "updated_at",
-            "category", "category_name", "image",
-            "variants",
+            "id",
+            "name",
+            "price",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "image_url",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "variants", "category_name"]
 
-    def get_category_name(self, obj):
-        return obj.category.name if obj.category else None
-
-    def validate_price(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Price must be >= 0.")
-        return value
+    def get_image_url(self, obj):
+        request = self.context.get("request")
+        # 若 model 有 image 欄位就回傳；沒有就回 None
+        if hasattr(obj, "image") and getattr(obj, "image"):
+            url = getattr(obj.image, "url", None)
+            if url:
+                return request.build_absolute_uri(url) if request else url
+        return None
 
 
 class CartItemSerializer(serializers.ModelSerializer):

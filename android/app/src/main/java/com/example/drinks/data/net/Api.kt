@@ -12,6 +12,9 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import com.example.drinks.data.model.CartDTO
+import com.example.drinks.data.model.CartItemDTO
+import com.example.drinks.data.model.AddToCartRequest
 
 
 class Api(private val base: String, private val client: OkHttpClient) {
@@ -94,20 +97,20 @@ class Api(private val base: String, private val client: OkHttpClient) {
     }
 
     // Cart
-    suspend fun myCart(): CartDTO = get("carts/me/")
-    suspend fun addItem(productId: Int, qty: Int = 1): Map<String, Any> =
-        send("POST", "carts/add_item/", mapOf("product_id" to productId, "qty" to qty))
-    suspend fun updateItem(productId: Int, qty: Int): Map<String, Any> =
-        send("PATCH", "carts/update_item/", mapOf("product_id" to productId, "qty" to qty))
-    suspend fun removeItem(productId: Int): Map<String, Any> =
-        send("POST", "carts/remove_item/", mapOf("product_id" to productId))
+//    suspend fun myCart(): CartDTO = get("carts/me/")
+//    suspend fun addItem(productId: Int, qty: Int = 1): Map<String, Any> =
+//        send("POST", "carts/add_item/", mapOf("product_id" to productId, "qty" to qty))
+//    suspend fun updateItem(productId: Int, qty: Int): Map<String, Any> =
+//        send("PATCH", "carts/update_item/", mapOf("product_id" to productId, "qty" to qty))
+//    suspend fun removeItem(productId: Int): Map<String, Any> =
+//        send("POST", "carts/remove_item/", mapOf("product_id" to productId))
+//
+//    suspend fun clearCart() = withContext(Dispatchers.IO) {
+//        val req = Request.Builder().url(base + "carts/clear/").delete().build()
+//        client.newCall(req).execute().use { if (!it.isSuccessful) throw IOException("clear failed: ${it.code}") }
+//    }
 
-    suspend fun clearCart() = withContext(Dispatchers.IO) {
-        val req = Request.Builder().url(base + "carts/clear/").delete().build()
-        client.newCall(req).execute().use { if (!it.isSuccessful) throw IOException("clear failed: ${it.code}") }
-    }
 
-    // Orders
     suspend fun listOrders(): List<OrderDTO> = withContext(Dispatchers.IO) {
         val req = Request.Builder().url(base + "orders/").get().build()
         client.newCall(req).execute().use { resp ->
@@ -135,41 +138,56 @@ class Api(private val base: String, private val client: OkHttpClient) {
 
 
 
-    suspend fun getBranches(): List<BranchDto> = withContext(Dispatchers.IO) {
-        val url = (base + "stores/").toHttpUrlOrNull()!!
-        val req = Request.Builder().url(url).get().build()
+    suspend fun getStores(): List<Store> = withContext(Dispatchers.IO) {
+        val baseUrl = (base + "stores/").toHttpUrlOrNull()!!
+        val req = Request.Builder().url(baseUrl).get().build()
         client.newCall(req).execute().use { resp ->
             val bodyStr = resp.body?.string() ?: ""
-            if (!resp.isSuccessful) {
-                // 把錯誤訊息打出來，方便定位 401/403/500
-                throw IOException("GET /stores/ -> ${resp.code} ${resp.message}. body=$bodyStr")
-            }
+            if (!resp.isSuccessful) throw IOException("GET /stores/ -> ${resp.code} ${resp.message}. body=$bodyStr")
 
             val element = JsonParser.parseString(bodyStr)
-            val listType = object : TypeToken<List<BranchDto>>() {}.type
+            val listType = object : TypeToken<List<Store>>() {}.type
 
             when {
-                element.isJsonArray -> gson.fromJson<List<BranchDto>>(element, listType)
-
+                element.isJsonArray -> gson.fromJson<List<Store>>(element, listType)
                 element.isJsonObject -> {
                     val obj = element.asJsonObject
-                    // 常見分頁 keys
                     val results = when {
                         obj.has("results") -> obj["results"]
                         obj.has("data")    -> obj["data"]
                         else               -> null
                     }
-                    if (results != null && results.isJsonArray) {
-                        gson.fromJson(results, listType)
-                    } else {
-                        // 找第一個是 JsonArray 的欄位做為 fallback
-                        val firstArray = obj.entrySet().firstOrNull { it.value.isJsonArray }?.value
-                        if (firstArray != null) gson.fromJson(firstArray, listType) else emptyList()
-                    }
+                    if (results != null && results.isJsonArray) gson.fromJson(results, listType)
+                    else obj.entrySet().firstOrNull { it.value.isJsonArray }?.value
+                        ?.let { gson.fromJson<List<Store>>(it, listType) } ?: emptyList()
                 }
-
                 else -> emptyList()
             }
         }
     }
+
+    // 放在 class Api 裡（和 listProducts 同層級）
+    suspend fun getProduct(id: Int): com.example.drinks.data.model.Product =
+        withContext(Dispatchers.IO) {
+            val req = okhttp3.Request.Builder()
+                .url(base + "products/$id/")
+                .get()
+                .build()
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    throw java.io.IOException("GET /products/$id/ -> ${resp.code} ${resp.message}")
+                }
+                com.example.drinks.data.json.GsonProvider.gson.fromJson(
+                    resp.body!!.charStream(),
+                    com.example.drinks.data.model.Product::class.java
+                )
+            }
+        }
+
+
+
+
+
+
+
 }
