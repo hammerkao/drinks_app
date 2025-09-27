@@ -17,4 +17,6 @@
     <color name="title_text">#222222</color>
     <color name="body_text">#666666</color>
 
+    <!-- 16% 透明度的金色，當 ripple 用 -->
+    <color name="brand_gold_16">#29E1B864</color>
 </resources>

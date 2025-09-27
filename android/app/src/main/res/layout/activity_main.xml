@@ -16,11 +16,15 @@
 
     <!-- 底部導覽（你原本的 menu_bottom） -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
+        style="@style/Widget.Drinks.BottomNavigationView"
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorSurface"
+        app:labelVisibilityMode="unlabeled"
         app:menu="@menu/menu_bottom_nav"
-        app:layout_anchorGravity="bottom"
         android:layout_gravity="bottom"/>
+
+
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

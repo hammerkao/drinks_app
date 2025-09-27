@@ -7,4 +7,6 @@
     <dimen name="radius_l">16dp</dimen>
     <dimen name="radius_s">8dp</dimen>
     <dimen name="btn_height">40dp</dimen>
+    <dimen name="bnv_icon_size">28dp</dimen>
+    <dimen name="bnv_padding_v">3dp</dimen>      <!-- 上下 padding，控制整體高度 -->
 </resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.Drinks.BottomNavigationView"
+        parent="Widget.MaterialComponents.BottomNavigationView">
+        <!-- 色系 -->
+        <item name="itemIconTint">@color/bnv_icon_tint</item>
+        <item name="itemTextColor">@color/bnv_text_tint</item>
+        <item name="itemRippleColor">@color/bnv_ripple</item>
+
+        <!-- 只顯示 ICON（隱藏文字） -->
+<!--        <item name="labelVisibilityMode">unlabeled</item>-->
+
+        <!-- 圖示尺寸（可調成 32dp/28dp，看你 Figma） -->
+        <item name="itemIconSize">@dimen/bnv_icon_size</item>
+
+        <!-- 提高高度：靠上下 padding 增高 -->
+        <item name="android:paddingTop">@dimen/bnv_padding_v</item>
+        <item name="android:paddingBottom">@dimen/bnv_padding_v</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Material 會自動處理不透明度；我們提供帶透明度的金色 -->
+    <item android:color="@color/brand_gold_16"/>
+</selector>
