@@ -5,11 +5,14 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.drinks.R
+import com.example.drinks.data.json.GsonProvider
 import com.example.drinks.data.model.Product
 import com.example.drinks.net.ProductApi
 
@@ -23,8 +26,13 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
     private var tvBack: TextView? = null
     private var tvStoreName: TextView? = null
 
+    // 點擊商品 → 導到細項（Fragment → Fragment）
     private val adapter = ProductAdapter { product ->
-        // TODO: 選取後的行為（加入購物車或進入客製頁）
+        val bundle = bundleOf(
+            "productJson" to GsonProvider.gson.toJson(product),
+            "productId" to product.id
+        )
+        findNavController().navigate(R.id.dest_product_detail, bundle)
     }
 
     private var storeId: Int? = null
@@ -32,6 +40,7 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
 
     override fun onViewCreated(v: View, s: Bundle?) {
         super.onViewCreated(v, s)
+
         rv = v.findViewById(R.id.recyclerView)
         progress = v.findViewById(R.id.progressBar)
         errorView = v.findViewById(R.id.errorView)
@@ -43,18 +52,24 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
         rv?.layoutManager = LinearLayoutManager(requireContext())
         rv?.adapter = adapter
 
-        // 參數
+        // 讀取參數
         storeId = arguments?.getInt("store_id")
         storeName = arguments?.getString("store_name")
         tvStoreName?.text = storeName ?: "店名"
 
-        tvBack?.setOnClickListener { findNavController().navigateUp() }
+        // 返回鍵：回上一層（由 Navigation 處理）
+        tvBack?.setOnClickListener {
+            findNavController().navigateUp()
+        }
 
         loadFirstPage()
     }
 
     private fun loadFirstPage() {
-        val sid = storeId ?: run { showError("缺少 store_id"); return }
+        val sid = storeId ?: run {
+            showError("缺少 store_id")
+            return
+        }
         setLoading(true)
         ProductApi.listProducts(
             context = requireContext(),
@@ -63,7 +78,7 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
             onSuccess = { pg ->
                 activity?.runOnUiThread {
                     setLoading(false)
-                    val list: List<Product> = pg.results
+                    val list: List<Product> = pg.results ?: emptyList()
                     adapter.submitList(list)
                     emptyView?.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
                 }
@@ -71,7 +86,7 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
             onError = { msg ->
                 activity?.runOnUiThread {
                     setLoading(false)
-                    showError(msg)
+                    showError(msg ?: "載入失敗")
                 }
             }
         )
@@ -86,10 +101,17 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
     private fun showError(msg: String) {
         errorView?.visibility = View.VISIBLE
         errorText?.text = msg
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        rv = null; progress = null; errorView = null; errorText = null; emptyView = null; tvBack = null; tvStoreName = null
+        rv = null
+        progress = null
+        errorView = null
+        errorText = null
+        emptyView = null
+        tvBack = null
+        tvStoreName = null
     }
 }

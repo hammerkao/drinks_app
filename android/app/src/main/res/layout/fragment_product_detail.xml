@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Top App Bar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:titleTextColor="@android:color/black"
+        app:navigationIconTint="@android:color/black"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- 中間內容：卡在 footer 之上 -->
+    <ScrollView
+        android:id="@+id/scrollContent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/footerBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 商品大圖 -->
+            <ImageView
+                android:id="@+id/imgCover"
+                android:layout_width="match_parent"
+                android:layout_height="220dp"
+                android:scaleType="centerCrop"
+                android:layout_marginBottom="12dp" />
+
+            <!-- 標題 + 價格 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:id="@+id/tvDetailTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textStyle="bold"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/tvPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <!-- 甜度（3 排 × 每排 2 個） -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="甜度選擇（必選）"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#0F000000"
+                android:padding="12dp"
+                android:layout_marginTop="6dp">
+
+                <RadioGroup
+                    android:id="@+id/rgSweetRow1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <RadioButton
+                        android:id="@+id/rbSweetNormal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="正常糖" />
+                    <RadioButton
+                        android:id="@+id/rbSweet80"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="八分糖" />
+                </RadioGroup>
+
+                <RadioGroup
+                    android:id="@+id/rgSweetRow2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+                    <RadioButton
+                        android:id="@+id/rbSweet10"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="一分糖" />
+                    <RadioButton
+                        android:id="@+id/rbSweetMore"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="多糖" />
+                </RadioGroup>
+
+                <RadioGroup
+                    android:id="@+id/rgSweetRow3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+                    <RadioButton
+                        android:id="@+id/rbSweet30"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="三分糖" />
+                    <RadioButton
+                        android:id="@+id/rbSweet0"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="去糖" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- 冰量（3 排 × 每排 2 個） -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="冰量選擇（必選）"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#0F000000"
+                android:padding="12dp"
+                android:layout_marginTop="6dp">
+
+                <RadioGroup
+                    android:id="@+id/rgIceRow1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <RadioButton
+                        android:id="@+id/rbIceNormal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="正常冰" />
+                    <RadioButton
+                        android:id="@+id/rbIceNo"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="去冰" />
+                </RadioGroup>
+
+                <RadioGroup
+                    android:id="@+id/rgIceRow2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+                    <RadioButton
+                        android:id="@+id/rbIceLess"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="微冰" />
+                    <RadioButton
+                        android:id="@+id/rbIceMore"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="多冰" />
+                </RadioGroup>
+
+                <RadioGroup
+                    android:id="@+id/rgIceRow3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+                    <RadioButton
+                        android:id="@+id/rbIceLight"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="少冰" />
+                    <RadioButton
+                        android:id="@+id/rbWarm"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="溫" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- 加料 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="加料（最多選 3 項）"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#0F000000"
+                android:padding="12dp"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <CheckBox
+                        android:id="@+id/cbPearl"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="珍珠 +NT$10" />
+                    <CheckBox
+                        android:id="@+id/cbCoconut"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="椰果 +NT$10" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+                    <CheckBox
+                        android:id="@+id/cbPudding"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="布丁 +NT$15" />
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 備註 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="備註（10 個字內）"
+                android:layout_marginTop="12dp" />
+            <EditText
+                android:id="@+id/etNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="例如：少冰、不要封膜太緊"
+                android:maxLength="10"
+                android:padding="12dp"
+                android:background="@android:drawable/edit_text" />
+
+            <!-- 預留底部 padding，避免內容被 footer 遮住（多保險） -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="16dp"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 固定底部：數量 − / + + 新增至購物車 -->
+    <LinearLayout
+        android:id="@+id/footerBar"
+        android:layout_width="0dp"
+        android:layout_height="64dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical"
+        android:background="?attr/colorSurface"
+        android:elevation="6dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <Button
+            android:id="@+id/btnQtyMinus"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="−" />
+
+        <TextView
+            android:id="@+id/tvQty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1"
+            android:textSize="16sp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+
+        <Button
+            android:id="@+id/btnQtyPlus"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="+" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddToCart"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="新增至購物車"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:backgroundTint="?attr/colorPrimary"
+            app:cornerRadius="20dp"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

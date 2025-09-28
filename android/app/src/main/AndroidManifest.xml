@@ -9,22 +9,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.Drinks">
 
-        <!-- 啟動頁：一定 exported="true" -->
+        <!-- 啟動頁 -->
         <activity
             android:name=".ui.LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Drinks.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- 登入後目標頁：顯式 Intent 也建議設 true -->
+        <!-- NavHost 宿主頁：一定要 NoActionBar + Material -->
         <activity
             android:name=".ui.MainActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:theme="@style/Theme.Drinks.NoActionBar" />
 
-        <!-- 其餘僅供 app 內部跳轉，可設 false -->
+        <!-- 其餘頁（過渡期保留） -->
         <activity android:name=".ui.RegisterActivity" android:exported="false"/>
         <activity android:name=".ui.RegisterSuccessActivity" android:exported="false"/>
         <activity android:name=".ui.HomeActivity" android:exported="false"/>
@@ -33,7 +35,6 @@
         <activity android:name=".ui.CartActivity" android:exported="false"/>
         <activity android:name=".ui.CheckoutActivity" android:exported="false"/>
         <activity android:name=".ui.SuccessActivity" android:exported="false"/>
-
 
     </application>
 </manifest>

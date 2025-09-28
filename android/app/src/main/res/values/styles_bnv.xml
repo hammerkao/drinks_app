@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Widget.Drinks.BottomNavigationView"
-        parent="Widget.MaterialComponents.BottomNavigationView">
+        parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- 色系 -->
         <item name="itemIconTint">@color/bnv_icon_tint</item>
         <item name="itemTextColor">@color/bnv_text_tint</item>
@@ -16,5 +16,11 @@
         <!-- 提高高度：靠上下 padding 增高 -->
         <item name="android:paddingTop">@dimen/bnv_padding_v</item>
         <item name="android:paddingBottom">@dimen/bnv_padding_v</item>
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
     </style>
+
+    <!-- 若你有需要單獨指定某 Activity 的主題，可再做變體 -->
+    <style name="Theme.Drinks.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
 </resources>

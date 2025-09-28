@@ -1,6 +1,5 @@
 package com.example.drinks.ui
 
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,12 +11,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.drinks.R
-import com.example.drinks.data.json.GsonProvider
 import com.example.drinks.data.model.Product
 
 class ProductAdapter(
-    // 仍保留 onPick 勾點（若你另外還想做 tracking 用），但不再依賴它完成跳轉
-    private val onPick: ((Product) -> Unit)? = null
+    private val onPick: (Product) -> Unit = {}  // ← 改為必填回呼，由外部（Fragment）決定怎麼導頁
 ) : ListAdapter<Product, ProductAdapter.VH>(Diff) {
 
     object Diff : DiffUtil.ItemCallback<Product>() {
@@ -31,22 +28,6 @@ class ProductAdapter(
         private val price: TextView = v.findViewById(R.id.price)
         private val btn: TextView = v.findViewById(R.id.btnPick)
 
-        private fun goDetail(item: Product) {
-            // 直接在這裡啟動詳情頁
-            val ctx = itemView.context
-            val it = Intent(ctx, ProductDetailActivity::class.java).apply {
-                putExtra("product_id", item.id)
-                putExtra("pid", item.id) // 相容舊 key
-                putExtra("product_json", GsonProvider.gson.toJson(item))
-            }
-            try {
-                ctx.startActivity(it)
-            } catch (e: Exception) {
-                Toast.makeText(ctx, "開啟詳情失敗：${e.message}", Toast.LENGTH_LONG).show()
-            }
-            onPick?.invoke(item) // 可選：若你還想做記錄
-        }
-
         fun bind(item: Product) {
             name.text = item.name
             price.text = "NT$ ${item.price.substringBefore('.')}"
@@ -56,13 +37,12 @@ class ProductAdapter(
                 img.setImageResource(android.R.drawable.ic_menu_report_image)
             }
 
-            // 按鈕
+            // 點擊事件全部交給外部回呼（Fragment 負責 navigate）
             btn.setOnClickListener {
-                Toast.makeText(it.context, "go", Toast.LENGTH_SHORT).show() // 你的 debug
-                goDetail(item)
+                Toast.makeText(it.context, "go", Toast.LENGTH_SHORT).show() // 你的 debug，可移除
+                onPick(item)
             }
-            // 整列
-            itemView.setOnClickListener { goDetail(item) }
+            itemView.setOnClickListener { onPick(item) }
         }
     }
 

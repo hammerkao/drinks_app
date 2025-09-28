@@ -5,9 +5,10 @@
     android:id="@+id/bottomNav"
     android:layout_width="match_parent"
     android:layout_height="56dp"
-    android:background="@color/bottom_nav_bg"   <!-- ← 背景色跟選餐頁一致 -->
+    android:background="@color/card_bg"
     app:menu="@menu/menu_bottom_nav"
-    app:labelVisibilityMode="unlabeled"        <!-- ← 不顯示文字，和選餐頁一致 -->
+    app:labelVisibilityMode="unlabeled"
     app:itemIconSize="28dp"
     app:itemRippleColor="@null"
-    app:itemIconTint="@color/selector_bottom_nav_icon"/>
+    app:itemIconTint="@color/brand_gold"
+    />

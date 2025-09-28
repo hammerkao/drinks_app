@@ -4,41 +4,47 @@
     android:id="@+id/nav_main"
     app:startDestination="@id/nav_branch_list">
 
-            <!-- 飲品 tab：先到選分店頁 -->
-            <fragment
-                android:id="@+id/nav_branch_list"
-            android:name="com.example.drinks.ui.SelectStoreFragment"
-            android:label="選分店">
-            <action
-                android:id="@+id/action_to_product_list"
-                app:destination="@id/dest_product_list" />
-        </fragment>
+    <!-- 選分店頁 -->
+    <fragment
+        android:id="@+id/nav_branch_list"
+        android:name="com.example.drinks.ui.SelectStoreFragment"
+        android:label="選擇分店">
+        <!-- 從選分店前往商品清單 -->
+        <action
+            android:id="@+id/action_selectStore_to_productList"
+            app:destination="@id/dest_product_list" />
+    </fragment>
 
-            <!-- 產品清單（非底部 tab，屬於「飲品」流程內頁） -->
-        <fragment
+    <!-- 商品清單頁（Fragment 版） -->
+    <fragment
         android:id="@+id/dest_product_list"
         android:name="com.example.drinks.ui.ProductListFragment"
-        android:label="選飲料" />
+        android:label="商品清單">
+        <argument
+            android:name="store_id"
+            app:argType="integer" />
+        <argument
+            android:name="store_name"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
 
-<!--             其他頂層頁面，id 也要對齊 menu -->
-        <fragment
-        android:id="@+id/nav_orders"
-        android:name="com.example.drinks.ui.OrdersFragment"
-        android:label="訂單" />
+    <!-- 商品細項（你已新增） -->
+    <fragment
+        android:id="@+id/dest_product_detail"
+        android:name="com.example.drinks.ui.ProductDetailFragment"
+        android:label="餐點細項">
+        <argument
+            android:name="productJson"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="productId"
+            app:argType="integer"
+            android:defaultValue="0" />
+    </fragment>
 
-        <fragment
-        android:id="@+id/nav_cart"
-        android:name="com.example.drinks.ui.CartFragment"
-        android:label="購物車" />
+    <!-- 其他目的地略 -->
+</navigation>
 
-        <fragment
-        android:id="@+id/nav_profile"
-        android:name="com.example.drinks.ui.ProfileFragment"
-        android:label="我的" />
-
-        <fragment
-        android:id="@+id/nav_other"
-        android:name="com.example.drinks.ui.OtherFragment"
-        android:label="其他" />
-            </navigation>
 

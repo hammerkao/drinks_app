@@ -17,7 +17,17 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.navHost) as NavHostFragment
         val navController = navHost.navController
 
+
+
         val bottom = findViewById<BottomNavigationView>(R.id.bottomNav)
         bottom.setupWithNavController(navController)
+
+        // menu item 的 id 要和 nav_graph 的 destination id 對得上
+        bottom.setupWithNavController(navController)
+
+        // 重新點擊目前 tab 回到根（可選）
+        bottom.setOnItemReselectedListener { dest ->
+            // 交給 Navigation 自己處理即可，通常會 noop
+        }
     }
 }
