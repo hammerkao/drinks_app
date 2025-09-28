@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.bottomnavigation.BottomNavigationView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomNav"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:background="@color/bottom_nav_bg"   <!-- ← 背景色跟選餐頁一致 -->
+    app:menu="@menu/menu_bottom_nav"
+    app:labelVisibilityMode="unlabeled"        <!-- ← 不顯示文字，和選餐頁一致 -->
+    app:itemIconSize="28dp"
+    app:itemRippleColor="@null"
+    app:itemIconTint="@color/selector_bottom_nav_icon"/>

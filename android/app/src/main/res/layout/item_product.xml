@@ -12,6 +12,8 @@
         android:padding="12dp"
         android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:clickable="false"
+        android:focusable="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -43,12 +45,18 @@
                 android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>
 
+
+
         <TextView
             android:id="@+id/btnPick"
             android:text="選取" android:textStyle="bold"
             android:textColor="@android:color/white"
             android:gravity="center"
             android:background="@drawable/bg_btn_gold"
-            android:layout_width="72dp" android:layout_height="40dp" />
+            android:layout_width="72dp" android:layout_height="40dp"
+            android:clickable="true"
+            android:focusable="true"
+            />
+
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,5 @@
 package com.example.drinks.ui
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -30,12 +29,9 @@ class ProductListActivity : AppCompatActivity() {
 
         // RecyclerView
         binding.rvProducts.layoutManager = LinearLayoutManager(this)
-        adapter = ProductAdapter { product ->
-            startActivity(
-                Intent(this, ProductDetailActivity::class.java)
-                    .putExtra("pid", product.id) // Int
-            )
-        }
+
+        // ✅ 不帶 lambda 的簡單版 Adapter：點擊行為已在 ProductAdapter 內部直接啟動詳情頁
+        adapter = ProductAdapter()
         binding.rvProducts.adapter = adapter
 
         loadProducts()
@@ -43,21 +39,18 @@ class ProductListActivity : AppCompatActivity() {
 
     private fun loadProducts() {
         val api = Api(NetCore.BASE_URL, NetCore.buildOkHttp(this))
-
-        // 可選：帶入過濾條件（若後端有支援）
         val categoryId = intent.getIntExtra("category_id", -1).takeIf { it > 0 }
 
         lifecycleScope.launch {
             try {
-                val list: List<Product> = api.listProducts(
-                    // search = null,
-                    // ordering = "id",
-                    // minPrice = null, maxPrice = null,
-                    category = categoryId
-                )
+                val list: List<Product> = api.listProducts(category = categoryId)
                 adapter.submitList(list)
             } catch (e: Exception) {
-                Toast.makeText(this@ProductListActivity, "載入商品失敗：${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@ProductListActivity,
+                    "載入商品失敗：${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

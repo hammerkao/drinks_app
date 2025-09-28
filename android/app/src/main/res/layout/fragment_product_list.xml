@@ -5,27 +5,38 @@
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingTop="16dp">
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="16dp">
 
         <!-- 上方 Header -->
         <LinearLayout
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:gravity="center_vertical">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="20dp">
 
             <TextView
                 android:id="@+id/tvBack"
-                android:text="回分店"
-                android:textSize="14sp" android:textColor="#666666"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:paddingRight="12dp"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                android:text="回分店"
+                android:textColor="#666666"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/tvStoreName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="50dp"
                 android:text="店名"
-                android:textStyle="bold" android:textSize="24sp"
                 android:textColor="#222222"
-                android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1"/>
+                android:textSize="28sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
         <!-- 商品列表 -->
