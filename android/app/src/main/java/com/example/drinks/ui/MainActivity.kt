@@ -14,7 +14,7 @@ class MainActivity : AppCompatActivity() {
 
         // 這三行是關鍵：用 NavHostFragment 取得 navController
         val navHost = supportFragmentManager
-            .findFragmentById(R.id.navHost) as NavHostFragment
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHost.navController
 
 

@@ -13,6 +13,8 @@ import com.example.drinks.data.json.GsonProvider
 import com.example.drinks.data.model.Product
 import com.example.drinks.data.model.SelectedOptions
 import com.example.drinks.store.CartManager
+import androidx.appcompat.content.res.AppCompatResources
+import com.google.android.material.appbar.MaterialToolbar
 
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
 
@@ -81,10 +83,14 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         renderProduct(product)
 
         // Toolbar 標題 + 返回
-        val toolbar = view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.title = product.name
-        toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
+        toolbar.navigationIcon = AppCompatResources.getDrawable(
+            requireContext(),
+            R.drawable.ic_arrow_back_24
+        )
         toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
+
 
         // 邏輯
         bindQuantity()
@@ -108,9 +114,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
                 return@setOnClickListener
             }
             repeat(qty) { CartManager.add(product, sel) }
-            Toast.makeText(requireContext(), "已加入購物車（$qty 杯）", Toast.LENGTH_SHORT).show()
-            // 視需求導向購物車：
-            // findNavController().navigate(R.id.nav_cart)
+            // 回到上一頁（商品清單），那邊會顯示「檢視購物車」
+            findNavController().popBackStack()
         }
     }
 
