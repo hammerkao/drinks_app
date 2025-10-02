@@ -1,8 +1,7 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<resources>
     <style name="Base.Theme.Drinks" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- 指定使用我們自訂的 BottomNavigation 樣式 -->
+        <item name="bottomNavigationStyle">@style/Widget.Drinks.BottomNavigationView</item>
     </style>
 
     <style name="Theme.Drinks" parent="Base.Theme.Drinks" />

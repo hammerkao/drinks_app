@@ -92,7 +92,7 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_gravity="bottom"
-        android:background="?attr/colorSurface"
+        android:background="@color/brand_gold"
         android:elevation="6dp"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
@@ -106,6 +106,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="檢視購物車（0） NT$0"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
             android:textStyle="bold"/>
     </LinearLayout>
     <!-- ▲ end cartBar -->

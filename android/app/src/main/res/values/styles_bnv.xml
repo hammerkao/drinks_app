@@ -1,26 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 用 MDC 的 BottomNavigationView，避免 M3 style 名稱解析問題 -->
     <style name="Widget.Drinks.BottomNavigationView"
-        parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- 色系 -->
+        parent="Widget.MaterialComponents.BottomNavigationView">
+
+        <!-- 圖示 / 文字色票（選中=brand_gold，未選=灰） -->
         <item name="itemIconTint">@color/bnv_icon_tint</item>
         <item name="itemTextColor">@color/bnv_text_tint</item>
         <item name="itemRippleColor">@color/bnv_ripple</item>
 
-        <!-- 只顯示 ICON（隱藏文字） -->
-<!--        <item name="labelVisibilityMode">unlabeled</item>-->
+        <!-- ⚠️ 刪掉這行：itemActiveIndicatorStyle（M2 沒有膠囊） -->
+        <!-- <item name="itemActiveIndicatorStyle">@style/Widget.Drinks.BottomNavigation.ActiveIndicator</item> -->
 
-        <!-- 圖示尺寸（可調成 32dp/28dp，看你 Figma） -->
         <item name="itemIconSize">@dimen/bnv_icon_size</item>
-
-        <!-- 提高高度：靠上下 padding 增高 -->
         <item name="android:paddingTop">@dimen/bnv_padding_v</item>
         <item name="android:paddingBottom">@dimen/bnv_padding_v</item>
-
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/white</item>
     </style>
-
-    <!-- 若你有需要單獨指定某 Activity 的主題，可再做變體 -->
-    <style name="Theme.Drinks.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
 </resources>
