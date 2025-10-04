@@ -91,7 +91,6 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         )
         toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
 
-
         // 邏輯
         bindQuantity()
         bindNoteLimit()
@@ -113,10 +112,25 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
                 Toast.makeText(requireContext(), "加料最多選 3 項", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            // 寫入備註
+            sel.note = etNote.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+
+            // 加入購物車0
             repeat(qty) { CartManager.add(product, sel) }
-            // 回到上一頁（商品清單），那邊會顯示「檢視購物車」
-            findNavController().popBackStack()
+
+            // ✅ 回到商品清單（而不是切到底部購物車）
+            Toast.makeText(requireContext(), "已加入購物車", Toast.LENGTH_SHORT).show()
+
+            // 明確返回到清單頁（在 nav_order 巢狀圖內）
+            val nav = findNavController()
+            val popped = nav.popBackStack(R.id.dest_product_list, false)
+            if (!popped) {
+                // 若因路徑不同沒找到目標，退一層也 OK（退回上一頁）
+                nav.popBackStack()
+            }
         }
+
     }
 
     private fun bindQuantity() {

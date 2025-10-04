@@ -2,13 +2,16 @@
 package com.example.drinks.data.model
 
 data class CartLine(
-    val productId: Int,          // ✅ Int
+    val productId: Int,
     val name: String,
     var qty: Int,
-    val unitPrice: Int,          // ✅ Int（單價，元）
-    val optionsPrice: Int,       // ✅ Int（加料價，元）
+    val unitPrice: Int,
+    val optionsPrice: Int,
     val selected: SelectedOptions,
-    val lineKey: String
+    val lineKey: String,
+    val imageUrl: String? = null,          // ← ➕ 新增欄位（預設 null）
 ) {
-    val subtotal: Int get() = (unitPrice + optionsPrice) * qty
+    val subtotal: Int
+        get() = (unitPrice + optionsPrice) * qty
 }
+

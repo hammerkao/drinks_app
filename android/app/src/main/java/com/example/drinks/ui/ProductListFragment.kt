@@ -5,9 +5,11 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -28,7 +30,7 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
     private var tvBack: TextView? = null
     private var tvStoreName: TextView? = null
 
-    // ▼ 新增：檢視購物車列
+    // ▼ 檢視購物車列
     private var cartBar: View? = null
     private var tvCartSummary: TextView? = null
 
@@ -53,16 +55,19 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
         tvBack = v.findViewById(R.id.tvBack)
         tvStoreName = v.findViewById(R.id.tvStoreName)
 
-        // ▼ 新增：底部檢視購物車列
+        storeId = arguments?.getInt("store_id")
+        storeName = arguments?.getString("store_name")
+        tvStoreName?.text = storeName ?: "店名"
+        com.example.drinks.store.CartManager.currentStoreName = storeName
+
+        // ▼ 底部檢視購物車列
         cartBar = v.findViewById(R.id.cartBar)
         tvCartSummary = v.findViewById(R.id.tvCartSummary)
+
         cartBar?.setOnClickListener {
-            // 依你的導覽圖 id；若有 CartFragment 就跳過去，或先用 Toast
-            try {
-                findNavController().navigate(R.id.nav_cart)
-            } catch (_: Exception) {
-                Toast.makeText(requireContext(), "未配置購物車頁，先留在此頁", Toast.LENGTH_SHORT).show()
-            }
+            val bottom = requireActivity()
+                .findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNav)
+            bottom?.selectedItemId = R.id.nav_cart
         }
 
         rv?.layoutManager = LinearLayoutManager(requireContext())
@@ -73,23 +78,25 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
         storeName = arguments?.getString("store_name")
         tvStoreName?.text = storeName ?: "店名"
 
-        // ▲ 回分店：若購物車不為空 → 出現警告
-        tvBack?.setOnClickListener {
-            if (!CartManager.isEmpty()) {
-                MaterialAlertDialogBuilder(requireContext())
-                    .setMessage("更換門市將會清空購物車")
-                    .setNegativeButton("取消", null)
-                    .setPositiveButton("確定") { _, _ ->
-                        CartManager.clear()
-                        findNavController().popBackStack() // 回分店列表
-                    }
-                    .show()
-            } else {
-                findNavController().popBackStack()
+        // ▲ 回分店：統一用確認流程（按鈕）
+        tvBack?.setOnClickListener { confirmBackToBranch() }
+
+        // ▲ 回分店：統一用確認流程（系統返回鍵）
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() = confirmBackToBranch()
             }
-        }
+        )
 
         loadFirstPage()
+
+        // 監聽購物車變更 → 刷新 CartBar
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                CartManager.changes.collect { refreshCartBar() }
+            }
+        }
     }
 
     override fun onResume() {
@@ -98,8 +105,8 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
     }
 
     private fun refreshCartBar() {
-        val count = CartManager.count()         // 需要 CartManager 有 count()
-        val total = CartManager.totalAmount()   // 需要 CartManager 有 totalAmount()，單位 NT$
+        val count = CartManager.count()
+        val total = CartManager.totalAmount()
         if (count > 0) {
             cartBar?.visibility = View.VISIBLE
             tvCartSummary?.text = "檢視購物車（$count） NT$$total"
@@ -121,7 +128,7 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
                     val list: List<Product> = pg.results
                     adapter.submitList(list)
                     emptyView?.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
-                    refreshCartBar() // 載入完成後也更新一次
+                    refreshCartBar()
                 }
             },
             onError = { msg ->
@@ -142,6 +149,24 @@ class ProductListFragment : Fragment(R.layout.fragment_product_list) {
     private fun showError(msg: String) {
         errorView?.visibility = View.VISIBLE
         errorText?.text = msg
+    }
+
+    /** 統一的「回分店」流程：有商品先確認並清空，然後明確退回分店頁 */
+    private fun confirmBackToBranch() {
+        val nav = findNavController()
+        if (!CartManager.isEmpty()) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setMessage("更換門市將會清空購物車")
+                .setNegativeButton("取消", null)
+                .setPositiveButton("確定") { _, _ ->
+                    CartManager.clear()
+                    // 明確指定退回分店頁，避免只在巢狀圖內 pop
+                    nav.popBackStack(R.id.nav_branch_list, false)
+                }
+                .show()
+        } else {
+            nav.popBackStack(R.id.nav_branch_list, false)
+        }
     }
 
     override fun onDestroyView() {

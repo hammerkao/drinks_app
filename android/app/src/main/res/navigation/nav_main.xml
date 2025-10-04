@@ -4,47 +4,56 @@
     android:id="@+id/nav_main"
     app:startDestination="@id/nav_branch_list">
 
-    <!-- 選分店頁 -->
+    <!-- 仍然保留選分店 -->
     <fragment
         android:id="@+id/nav_branch_list"
         android:name="com.example.drinks.ui.SelectStoreFragment"
         android:label="選擇分店">
-        <!-- 從選分店前往商品清單 -->
         <action
             android:id="@+id/action_selectStore_to_productList"
-            app:destination="@id/dest_product_list" />
+            app:destination="@id/nav_order" />
     </fragment>
 
-    <!-- 商品清單頁（Fragment 版） -->
+    <!-- ✅ 點餐 Tab：用巢狀 NavGraph，id 要跟 BottomNav 對應 -->
+    <navigation
+        android:id="@+id/nav_order"
+        app:startDestination="@id/dest_product_list">
+
+        <fragment
+            android:id="@+id/dest_product_list"
+            android:name="com.example.drinks.ui.ProductListFragment"
+            android:label="商品清單">
+            <argument
+                android:name="store_id"
+                app:argType="integer" />
+            <argument
+                android:name="store_name"
+                app:argType="string"
+                app:nullable="true" />
+            <!-- 若需要從清單到詳情，也可在這裡下 action 到 dest_product_detail -->
+        </fragment>
+
+        <fragment
+            android:id="@+id/dest_product_detail"
+            android:name="com.example.drinks.ui.ProductDetailFragment"
+            android:label="餐點細項">
+            <argument
+                android:name="productJson"
+                app:argType="string"
+                app:nullable="true" />
+            <argument
+                android:name="productId"
+                app:argType="integer"
+                android:defaultValue="0" />
+        </fragment>
+
+    </navigation>
+
+    <!-- ✅ 購物車仍是頂層目的地（對應 BottomNav 的 cart item） -->
     <fragment
-        android:id="@+id/dest_product_list"
-        android:name="com.example.drinks.ui.ProductListFragment"
-        android:label="商品清單">
-        <argument
-            android:name="store_id"
-            app:argType="integer" />
-        <argument
-            android:name="store_name"
-            app:argType="string"
-            app:nullable="true" />
-    </fragment>
-
-    <!-- 商品細項（你已新增） -->
-    <fragment
-        android:id="@+id/dest_product_detail"
-        android:name="com.example.drinks.ui.ProductDetailFragment"
-        android:label="餐點細項">
-        <argument
-            android:name="productJson"
-            app:argType="string"
-            app:nullable="true" />
-        <argument
-            android:name="productId"
-            app:argType="integer"
-            android:defaultValue="0" />
-    </fragment>
-
-    <!-- 其他目的地略 -->
+        android:id="@+id/nav_cart"
+        android:name="com.example.drinks.ui.CartFragment"
+        android:label="購物車" />
 </navigation>
 
 

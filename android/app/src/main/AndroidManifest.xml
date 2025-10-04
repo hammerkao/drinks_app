@@ -31,8 +31,8 @@
         <activity android:name=".ui.RegisterSuccessActivity" android:exported="false"/>
         <activity android:name=".ui.HomeActivity" android:exported="false"/>
         <activity android:name=".ui.ProductListActivity" android:exported="false"/>
-        <activity android:name=".ui.ProductDetailActivity" android:exported="false"/>
-        <activity android:name=".ui.CartActivity" android:exported="false"/>
+<!--        <activity android:name=".ui.ProductDetailActivity" android:exported="false"/>-->
+<!--        <activity android:name=".ui.CartActivity" android:exported="false"/>-->
         <activity android:name=".ui.CheckoutActivity" android:exported="false"/>
         <activity android:name=".ui.SuccessActivity" android:exported="false"/>
 
