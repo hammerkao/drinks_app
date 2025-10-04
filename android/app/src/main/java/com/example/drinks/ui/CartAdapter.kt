@@ -16,7 +16,8 @@ import java.util.Locale
 class CartAdapter(
     private var items: List<CartLine>,
     private val onInc: (lineKey: String) -> Unit,
-    private val onDec: (lineKey: String, currentQty: Int) -> Unit
+    private val onDec: (lineKey: String, currentQty: Int) -> Unit,
+    private val readOnly: Boolean = false // 只顯示、不提供 +/-
 ) : RecyclerView.Adapter<CartAdapter.VH>() {
 
     fun submit(list: List<CartLine>) {
@@ -50,32 +51,37 @@ class CartAdapter(
         // 標題
         h.title.text = l.name
 
-        // ===== 明細：直接顯示使用者選擇（ID 或中文都支援），以及備註 =====
+        // ===== 明細（ID -> 中文；不存在就回原字）+ 備註 =====
         fun prettyLabel(x: String): String {
-            val trimmed = x.trim()
-            val mapped = Options.label(trimmed)
-            // 若 label() 找不到就回傳原字串（可能本來就已是中文）
-            return if (mapped.isBlank()) trimmed else mapped
+            val t = x.trim()
+            val mapped = Options.label(t)
+            return if (mapped.isBlank()) t else mapped
         }
 
         val parts = buildList {
             l.selected.sweet?.trim()?.takeIf { it.isNotEmpty() }?.let { add(prettyLabel(it)) }
             l.selected.ice?.trim()?.takeIf { it.isNotEmpty() }?.let { add(prettyLabel(it)) }
             if (l.selected.toppings.isNotEmpty()) {
-                // 去重 + 排序，避免順序不同導致顯示亂跳
-                addAll(l.selected.toppings.map { it.trim() }.filter { it.isNotEmpty() }.toSet().toList().sorted().map { prettyLabel(it) })
+                // 去重、過濾空字串、排序後再轉 label
+                addAll(
+                    l.selected.toppings
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .toSet()
+                        .toList()
+                        .sorted()
+                        .map { prettyLabel(it) }
+                )
             }
         }
 
         val note = l.selected.note?.trim()
-        val detail = buildString {
+        h.desc.text = buildString {
             append(parts.joinToString("、").ifEmpty { "—" })
             if (!note.isNullOrEmpty()) {
-                append("\n備註：")
-                append(note)
+                append("\n備註：").append(note)
             }
         }
-        h.desc.text = detail
         // =====================================
 
         // 價格/數量/小計
@@ -97,9 +103,19 @@ class CartAdapter(
             }
         }
 
-        // 事件
-        h.btnInc.setOnClickListener { onInc(l.lineKey) }
-        h.btnDec.setOnClickListener { onDec(l.lineKey, l.qty) }
+        // + / - 事件與顯示：依 readOnly 控制
+        if (readOnly) {
+            h.btnInc.visibility = View.GONE
+            h.btnDec.visibility = View.GONE
+            // 避免舊的 listener 殘留
+            h.btnInc.setOnClickListener(null)
+            h.btnDec.setOnClickListener(null)
+        } else {
+            h.btnInc.visibility = View.VISIBLE
+            h.btnDec.visibility = View.VISIBLE
+            h.btnInc.setOnClickListener { onInc(l.lineKey) }
+            h.btnDec.setOnClickListener { onDec(l.lineKey, l.qty) }
+        }
     }
 
     private fun formatTWD(n: Int): String =

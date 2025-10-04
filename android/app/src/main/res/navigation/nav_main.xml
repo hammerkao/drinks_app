@@ -54,6 +54,13 @@
         android:id="@+id/nav_cart"
         android:name="com.example.drinks.ui.CartFragment"
         android:label="購物車" />
+
+    <!-- 結帳頁 -->
+    <fragment
+        android:id="@+id/nav_checkout"
+        android:name="com.example.drinks.ui.CheckoutFragment"
+        android:label="訂單結算" />
+
 </navigation>
 
 

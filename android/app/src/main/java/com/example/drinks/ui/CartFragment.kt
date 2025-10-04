@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.drinks.R
@@ -85,7 +86,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         btnCheckout.isEnabled = CartManager.getLines().isNotEmpty()
 
         btnCheckout.setOnClickListener {
-            Toast.makeText(requireContext(), "稍後接上結帳流程", Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.nav_checkout)
         }
     }
 
