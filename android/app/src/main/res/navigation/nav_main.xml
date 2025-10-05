@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_main"
     app:startDestination="@id/nav_branch_list">
 
@@ -30,7 +31,6 @@
                 android:name="store_name"
                 app:argType="string"
                 app:nullable="true" />
-            <!-- 若需要從清單到詳情，也可在這裡下 action 到 dest_product_detail -->
         </fragment>
 
         <fragment
@@ -46,7 +46,6 @@
                 app:argType="integer"
                 android:defaultValue="0" />
         </fragment>
-
     </navigation>
 
     <!-- ✅ 購物車仍是頂層目的地（對應 BottomNav 的 cart item） -->
@@ -55,12 +54,23 @@
         android:name="com.example.drinks.ui.CartFragment"
         android:label="購物車" />
 
-    <!-- 結帳頁 -->
+    <!-- 結帳頁（現有的 CheckoutFragment） -->
     <fragment
         android:id="@+id/nav_checkout"
         android:name="com.example.drinks.ui.CheckoutFragment"
-        android:label="訂單結算" />
+        android:label="訂單結算"
+        tools:layout="@layout/fragment_checkout">
 
+        <!-- 從 CheckoutFragment 指到 Confirm 的 action -->
+        <action
+            android:id="@+id/action_nav_checkout_to_checkoutConfirmFragment"
+            app:destination="@id/checkoutConfirmFragment" />
+    </fragment>
+
+    <!-- 目的地：CheckoutConfirmFragment -->
+    <fragment
+        android:id="@+id/checkoutConfirmFragment"
+        android:name="com.example.drinks.ui.CheckoutConfirmFragment"
+        android:label="確認訂單"
+        tools:layout="@layout/fragment_checkout_confirm" />
 </navigation>
-
-

@@ -44,6 +44,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     private lateinit var etOrderNote: TextInputEditText
     private lateinit var btnNext: MaterialButton
 
+
     // ✅ 結帳頁僅顯示，不允許調整數量
     private val adapter by lazy {
         CartAdapter(
@@ -125,20 +126,23 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 return@setOnClickListener
             }
 
-            MaterialAlertDialogBuilder(requireContext())
-                .setMessage("確認送出訂單？")
-                .setNegativeButton("取消", null)
-                .setPositiveButton("送出") { _, _ ->
-                    // TODO: 呼叫下單 API（攜帶姓名、電話、取餐方式、付款方式、訂單備註等）
-                    CartManager.clear()
+            // 取值
+            val pickupMethod = "自取" // 目前只開放自取；未來若開放外送可改成狀態讀取
+            val paymentMethod = view.findViewById<RadioButton>(rgPayment.checkedRadioButtonId)
+                ?.text?.toString() ?: "現金"
+            val buyerName  = etBuyerName.text?.toString()?.trim().orEmpty()
+            val buyerPhone = etBuyerPhone.text?.toString()?.trim().orEmpty()
+            val orderNote = etOrderNote.text?.toString()?.trim().orEmpty()
 
-                    // 切到底部「訂單」頁
-                    val bottom = requireActivity().findViewById<BottomNavigationView>(R.id.bottomNav)
-                    bottom?.selectedItemId = R.id.nav_orders
-
-                    Toast.makeText(requireContext(), "已送出訂單", Toast.LENGTH_SHORT).show()
-                }
-                .show()
+            // 導頁 + 帶參數（Bundle 方式，最小改動）
+            val args = android.os.Bundle().apply {
+                putString("pickupMethod", pickupMethod)
+                putString("paymentMethod", paymentMethod)
+                putString("buyerName", buyerName)
+                putString("buyerPhone", buyerPhone)
+                putString("orderNote", orderNote)
+            }
+            findNavController().navigate(R.id.checkoutConfirmFragment, args)
         }
     }
 
