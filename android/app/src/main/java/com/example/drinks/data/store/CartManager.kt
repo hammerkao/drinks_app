@@ -10,7 +10,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 object CartManager {
+    var currentStoreId: Int? = null
     var currentStoreName: String? = null
+
+    fun setStore(id: Int, name: String?) {
+        currentStoreId = id
+        currentStoreName = name
+    }
 
     // 發佈「內容已變更」事件（UI 只需 collect 這個即可）
     private val _changes = MutableStateFlow(Unit)

@@ -63,7 +63,7 @@
 
         <!-- 從 CheckoutFragment 指到 Confirm 的 action -->
         <action
-            android:id="@+id/action_nav_checkout_to_checkoutConfirmFragment"
+            android:id="@+id/action_checkout_to_checkoutConfirm"
             app:destination="@id/checkoutConfirmFragment" />
     </fragment>
 
@@ -72,5 +72,35 @@
         android:id="@+id/checkoutConfirmFragment"
         android:name="com.example.drinks.ui.CheckoutConfirmFragment"
         android:label="確認訂單"
-        tools:layout="@layout/fragment_checkout_confirm" />
+        tools:layout="@layout/fragment_checkout_confirm">
+0
+        <!-- ✅ 從確認訂單頁 → 完成頁（把 action 放在這裡才找得到） -->
+        <action
+            android:id="@+id/action_checkoutConfirm_to_orderSuccess"
+            app:destination="@id/orderSuccessFragment"
+            app:launchSingleTop="true" />
+    </fragment>
+
+    <!-- 訂單完成頁 -->
+    <fragment
+        android:id="@+id/orderSuccessFragment"
+        android:name="com.example.drinks.ui.OrderSuccessFragment"
+        android:label="下單成功"
+        tools:layout="@layout/fragment_order_success">
+        <argument
+            android:name="orderId"
+            app:argType="integer" />
+        <argument
+            android:name="total"
+            app:argType="integer" />
+        <argument
+            android:name="storeName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="pickupTime"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
 </navigation>

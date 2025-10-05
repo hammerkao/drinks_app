@@ -20,9 +20,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
-import androidx.appcompat.content.res.AppCompatResources
-import android.graphics.Color
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.util.Log
 
 class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
 
@@ -44,7 +42,6 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     private lateinit var etOrderNote: TextInputEditText
     private lateinit var btnNext: MaterialButton
 
-
     // ✅ 結帳頁僅顯示，不允許調整數量
     private val adapter by lazy {
         CartAdapter(
@@ -63,7 +60,7 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         val btnBack = view.findViewById<ImageButton>(R.id.btnNavBack)
         val tvTitle = view.findViewById<TextView>(R.id.tvToolbarTitle)
 
-        tvTitle.text = "訂單結算" // 如需動態修改可在這裡設
+        tvTitle.text = "訂單結算"
         btnBack.setOnClickListener { findNavController().popBackStack() }
 
         // 綁定視圖
@@ -83,8 +80,29 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         etOrderNote = view.findViewById(R.id.etOrderNote)
         btnNext     = view.findViewById(R.id.btnCheckoutNext)
 
+        // ===== 取得分店資訊（安全讀取）=====
+        val storeIdFromArgs = arguments?.getInt("store_id", 0) ?: 0
+        val storeNameFromArgs = arguments?.getString("store_name")
+
+        val storeId = when {
+            storeIdFromArgs > 0 -> storeIdFromArgs
+            CartManager.currentStoreId != null -> CartManager.currentStoreId!!
+            else -> 0
+        }
+        val storeName = storeNameFromArgs ?: CartManager.currentStoreName ?: "未選擇分店"
+
+        Log.d("Checkout", "resolved storeId=$storeId, storeName=$storeName")
+
+        if (storeId <= 0) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setMessage("未取得分店資訊，請先選擇分店。")
+                .setPositiveButton(android.R.string.ok) { _, _ -> findNavController().popBackStack() }
+                .show()
+            return
+        }
+
         // 顯示分店名稱
-        tvStoreName.text = CartManager.currentStoreName ?: "未選擇分店"
+        tvStoreName.text = storeName
 
         // RecyclerView
         rv.layoutManager = LinearLayoutManager(requireContext())
@@ -126,16 +144,21 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 return@setOnClickListener
             }
 
-            // 取值
-            val pickupMethod = "自取" // 目前只開放自取；未來若開放外送可改成狀態讀取
+            // 取值（目前只開放自取）
+            val pickupMethod  = "自取"
             val paymentMethod = view.findViewById<RadioButton>(rgPayment.checkedRadioButtonId)
                 ?.text?.toString() ?: "現金"
             val buyerName  = etBuyerName.text?.toString()?.trim().orEmpty()
             val buyerPhone = etBuyerPhone.text?.toString()?.trim().orEmpty()
-            val orderNote = etOrderNote.text?.toString()?.trim().orEmpty()
+            val orderNote  = etOrderNote.text?.toString()?.trim().orEmpty()
 
-            // 導頁 + 帶參數（Bundle 方式，最小改動）
-            val args = android.os.Bundle().apply {
+            // 再次保險的 storeId（沿用前面解析出的值）
+            val safeStoreId = storeId
+
+            // 導頁 + 帶參數
+            val args = Bundle().apply {
+                putInt("store_id", safeStoreId)
+                putString("store_name", storeName)
                 putString("pickupMethod", pickupMethod)
                 putString("paymentMethod", paymentMethod)
                 putString("buyerName", buyerName)

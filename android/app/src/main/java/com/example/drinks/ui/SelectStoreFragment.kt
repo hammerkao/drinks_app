@@ -14,6 +14,7 @@ import com.example.drinks.R
 import com.example.drinks.data.model.Store
 import com.example.drinks.data.net.Api
 import com.example.drinks.net.NetCore
+import com.example.drinks.store.CartManager   // ← 新增：存分店
 import kotlinx.coroutines.launch
 
 class SelectStoreFragment : Fragment(R.layout.fragment_select_store) {
@@ -24,15 +25,22 @@ class SelectStoreFragment : Fragment(R.layout.fragment_select_store) {
     private var errorText: TextView? = null
     private var emptyView: TextView? = null
 
-    // 點擊分店 → 導向商品清單（帶 store_id / store_name）
+    // 點擊分店 → 先存入 CartManager，再導向商品清單
     private val adapter = StoreAdapter { store: Store ->
+        // 1) 記住分店（之後購物車/結帳/確認頁都可直接讀）
+        CartManager.setStore(store.id, store.name)
+
+        // 2) 同時把分店帶去下一頁（保險起見，頁面也能從 args 取得）
         val args = bundleOf(
             "store_id" to store.id,
             "store_name" to store.name
         )
-        // ★ 確認 nav_main.xml 裡的 action id 就是 action_selectStore_to_productList
+
+        // 3) 導頁（依你的 nav_graph 使用對應的 action 或 destination id）
+        // 若 nav_main.xml 有 <action android:id="@+id/action_selectStore_to_productList" … />
         findNavController().navigate(R.id.action_selectStore_to_productList, args)
-        // 若你在 nav_graph 用的是直接目的地 id，改成：
+
+        // 如果你是直接指到目的地（沒有 action），改用：
         // findNavController().navigate(R.id.dest_product_list, args)
     }
 

@@ -4,38 +4,39 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, permissions, status, filters as drf_filters
-from rest_framework.viewsets import ReadOnlyModelViewSet
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
 
-from .models import Category, Product, Variant, Cart, CartItem, Order, OrderItem, Store
+from .models import (
+    Category, Product, Variant,
+    Cart, CartItem,
+    Order, OrderItem,
+    Store,
+)
 from .serializers import (
     CategorySerializer, ProductSerializer, VariantSerializer,
-    CartSerializer, OrderSerializer, StoreSerializer
+    CartSerializer, OrderSerializer, StoreSerializer,
+    AddCartItemSerializer,
 )
-
-
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 
 
-
+# ---------- Store ----------
 class StoreViewSet(viewsets.ModelViewSet):
     queryset = Store.objects.all().order_by("id")
     serializer_class = StoreSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    # 依你的欄位調整（open_hours 通常不用篩選；status 常用來啟用/停用）
     filterset_fields = ["status"]
     search_fields = ["name", "address", "phone", "open_hours"]
     ordering_fields = ["id", "name"]
 
 
-# ---- Category ----
+# ---------- Category ----------
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all().order_by("order", "id")
     serializer_class = CategorySerializer
@@ -45,11 +46,11 @@ class CategoryViewSet(viewsets.ModelViewSet):
     ordering_fields = ["order", "name", "id"]
 
 
-# ---- Product ----
+# ---------- Product ----------
 class ProductFilter(filters.FilterSet):
     min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
     max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
-    category = filters.NumberFilter(field_name="category_id")
+    category  = filters.NumberFilter(field_name="category_id")
 
     class Meta:
         model = Product
@@ -71,7 +72,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ["id"]
 
 
-# ---- Variant ----
+# ---------- Variant ----------
 class VariantFilter(filters.FilterSet):
     min_price = filters.NumberFilter(field_name="price", lookup_expr="gte")
     max_price = filters.NumberFilter(field_name="price", lookup_expr="lte")
@@ -90,25 +91,18 @@ class VariantViewSet(viewsets.ModelViewSet):
     ordering_fields = ["price", "name", "id"]
 
 
-
-
-class IsOwnerOrAdmin(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        user = getattr(obj, "user", None)
-        return request.user and (request.user.is_staff or user == request.user)
-
+# ---------- Cart ----------
 class CartViewSet(viewsets.GenericViewSet):
     """
-    一人一車；提供 /carts/me/ 取得或建立購物車，以及增刪改項目。
+    一人一車；/carts/me/ 取得或建立購物車；add/update/remove/clear。
+    合併邏輯使用 product + options_key。
     """
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         qs = Cart.objects.select_related("user").prefetch_related("items__product")
-        if self.request.user.is_staff:
-            return qs
-        return qs.filter(user=self.request.user)
+        return qs if self.request.user.is_staff else qs.filter(user=self.request.user)
 
     def get_object(self):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
@@ -120,26 +114,60 @@ class CartViewSet(viewsets.GenericViewSet):
         cart = self.get_object()
         return Response(self.get_serializer(cart).data)
 
+    @staticmethod
+    def build_options_key(sweet, ice, toppings, note):
+        tops = ",".join(sorted(toppings or []))
+        return f"{sweet or ''}|{ice or ''}|{tops}|{note or ''}"
+
     @action(detail=False, methods=["post"], url_path="add_item")
     def add_item(self, request):
         cart = self.get_object()
-        product_id = request.data.get("product_id")
-        qty = int(request.data.get("qty", 1))
+        ser = AddCartItemSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
+
+        product = get_object_or_404(Product, pk=data["product_id"], is_active=True)
+        qty = int(data.get("qty", 1))
         if qty <= 0:
             return Response({"detail": "qty 必須 > 0"}, status=400)
-        product = get_object_or_404(Product, pk=product_id, is_active=True)
-        item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={"qty": qty})
+
+        sweet   = data.get("sweet")
+        ice     = data.get("ice")
+        toppings= data.get("toppings") or []
+        note    = data.get("note")
+        options_price = Decimal(str(data.get("options_price", 0)))
+
+        options_key = self.build_options_key(sweet, ice, toppings, note)
+
+        item, created = CartItem.objects.get_or_create(
+            cart=cart, product=product, options_key=options_key,
+            defaults={
+                "qty": qty,
+                "sweet": sweet,
+                "ice": ice,
+                "toppings_json": toppings,
+                "note": note,
+                "options_price": options_price,
+            }
+        )
         if not created:
             item.qty += qty
+            item.sweet = sweet
+            item.ice = ice
+            item.toppings_json = toppings
+            item.note = note
+            item.options_price = options_price
             item.save()
-        return Response({"detail": "OK"})
+
+        return Response({"detail": "OK"}, status=201)
 
     @action(detail=False, methods=["patch"], url_path="update_item")
     def update_item(self, request):
         cart = self.get_object()
-        product_id = request.data.get("product_id")
+        product_id  = request.data.get("product_id")
+        options_key = request.data.get("options_key", "")
         qty = int(request.data.get("qty", 1))
-        item = get_object_or_404(CartItem, cart=cart, product_id=product_id)
+        item = get_object_or_404(CartItem, cart=cart, product_id=product_id, options_key=options_key)
         if qty <= 0:
             item.delete()
         else:
@@ -150,8 +178,9 @@ class CartViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["post"], url_path="remove_item")
     def remove_item(self, request):
         cart = self.get_object()
-        product_id = request.data.get("product_id")
-        get_object_or_404(CartItem, cart=cart, product_id=product_id).delete()
+        product_id  = request.data.get("product_id")
+        options_key = request.data.get("options_key", "")
+        get_object_or_404(CartItem, cart=cart, product_id=product_id, options_key=options_key).delete()
         return Response({"detail": "OK"})
 
     @action(detail=False, methods=["delete"], url_path="clear")
@@ -160,39 +189,92 @@ class CartViewSet(viewsets.GenericViewSet):
         cart.items.all().delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+
+# ---------- Order ----------
 class OrderViewSet(viewsets.ModelViewSet):
     """
-    列出/查看自己的訂單，建立訂單會從目前購物車產生 Order 與 OrderItem。
+    建立訂單：
+      - 若 request.data 有 items（product_id/qty/options_price...），直接用 items 建單
+      - 否則從目前購物車生成
+    金額計算： (product.price + options_price) * qty
     """
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = Order.objects.select_related("user").prefetch_related("items__product").order_by("-id")
-        if self.request.user.is_staff:
-            return qs
-        return qs.filter(user=self.request.user)
+        qs = (
+            Order.objects
+            .select_related("user", "store")           # ← 多抓 store
+            .prefetch_related("items__product")
+            .order_by("-id")
+        )
+        return qs if self.request.user.is_staff else qs.filter(user=self.request.user)
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        # 從購物車生成訂單
+        data = request.data
+        store_id = data.get("store_id") or data.get("store")
+        store = None
+        if store_id:
+            try:
+                store = Store.objects.get(pk=int(store_id))
+            except (ValueError, Store.DoesNotExist):
+                return Response({"detail": "store_id 無效"}, status=400)
+
+        items_data = data.get("items")
+        if items_data:
+            # ===== B 方案：直接用 payload 建單 =====
+            order = Order.objects.create(user=request.user, store=store)
+            total = Decimal("0.00")
+            bulk = []
+            for it in items_data:
+                product = get_object_or_404(Product, pk=it.get("product_id"), is_active=True)
+                qty = int(it.get("qty", 1))
+                unit_price = Decimal(str(it.get("unit_price", product.price)))
+                options_price = Decimal(str(it.get("options_price", 0)))
+                sweet = it.get("sweet") or None
+                ice   = it.get("ice") or None
+                toppings = it.get("toppings") or []
+                note  = it.get("note") or None
+                options_key = it.get("options_key") or build_options_key(sweet, ice, toppings, note)
+
+                total += (unit_price + options_price) * qty
+                bulk.append(OrderItem(
+                    order=order, product=product, qty=qty,
+                    unit_price=unit_price, options_price=options_price,
+                    sweet=sweet, ice=ice, toppings_json=toppings,
+                    note=note, options_key=options_key,
+                ))
+            OrderItem.objects.bulk_create(bulk)
+            order.total = total
+            order.save(update_fields=["total"])
+            ser = self.get_serializer(order)
+            return Response(ser.data, status=status.HTTP_201_CREATED)
+
+        # ===== A 方案回退：從購物車轉單（保留你的舊邏輯；此處略） =====
         cart, _ = Cart.objects.get_or_create(user=request.user)
-        items = list(cart.items.select_related("product"))
-        if not items:
+        cart_items = list(cart.items.select_related("product"))
+        if not cart_items:
             return Response({"detail": "購物車是空的"}, status=400)
 
-        order = Order.objects.create(user=request.user)  # status 預設 created
+        order = Order.objects.create(user=request.user, store=store)
         total = Decimal("0.00")
         bulk = []
-        for ci in items:
-            unit_price = ci.product.price
-            total += unit_price * ci.qty
-            bulk.append(OrderItem(order=order, product=ci.product, qty=ci.qty, unit_price=unit_price))
+        for ci in cart_items:
+            base_price = ci.product.price
+            add_price  = ci.options_price or Decimal("0.00")
+            total += (base_price + add_price) * ci.qty
+            bulk.append(OrderItem(
+                order=order, product=ci.product, qty=ci.qty,
+                unit_price=base_price, options_price=add_price,
+                sweet=ci.sweet, ice=ci.ice, toppings_json=ci.toppings_json,
+                note=ci.note, options_key=ci.options_key,
+            ))
         OrderItem.objects.bulk_create(bulk)
         order.total = total
-        order.save()
+        order.save(update_fields=["total"])
+        cart.items.all().delete()
 
-        cart.items.all().delete()  # 清空購物車
-        serializer = self.get_serializer(order)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        ser = self.get_serializer(order)
+        return Response(ser.data, status=status.HTTP_201_CREATED)
