@@ -15,6 +15,8 @@ import com.example.drinks.data.model.SelectedOptions
 import com.example.drinks.store.CartManager
 import androidx.appcompat.content.res.AppCompatResources
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 
 class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
 
@@ -22,7 +24,8 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     private lateinit var imgCover: ImageView
     private lateinit var tvTitle: TextView
     private lateinit var tvPrice: TextView
-    private lateinit var etNote: EditText
+    private lateinit var tilNote: TextInputLayout
+    private lateinit var etNote: TextInputEditText
 
     // 甜度（3排）
     private lateinit var rgSweetRow1: RadioGroup
@@ -56,10 +59,11 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 綁定 View（一定要先綁再呼叫 bind*）
+        // 綁定 View
         imgCover = view.findViewById(R.id.imgCover)
         tvTitle  = view.findViewById(R.id.tvDetailTitle)
         tvPrice  = view.findViewById(R.id.tvPrice)
+        tilNote  = view.findViewById(R.id.tilNote)
         etNote   = view.findViewById(R.id.etNote)
 
         rgSweetRow1 = view.findViewById(R.id.rgSweetRow1)
@@ -73,9 +77,9 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         cbCoconut = view.findViewById(R.id.cbCoconut)
         cbPudding = view.findViewById(R.id.cbPudding)
 
-        tvQty      = view.findViewById(R.id.tvQty)
-        btnQtyPlus = view.findViewById(R.id.btnQtyPlus)
-        btnQtyMinus= view.findViewById(R.id.btnQtyMinus)
+        tvQty        = view.findViewById(R.id.tvQty)
+        btnQtyPlus   = view.findViewById(R.id.btnQtyPlus)
+        btnQtyMinus  = view.findViewById(R.id.btnQtyMinus)
         btnAddToCart = view.findViewById(R.id.btnAddToCart)
 
         // 讀取商品資料並渲染
@@ -93,9 +97,10 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
 
         // 邏輯
         bindQuantity()
-        bindNoteLimit()
-        bindToppings()
+        bindNoteLimit()   // 10 字上限（支援中文，無強制改字串）
+        bindToppings()    // 最多 3 項
 
+        // 甜度/冰塊 3 組互斥
         sweetListener = bindMutualExclusive(listOf(rgSweetRow1, rgSweetRow2, rgSweetRow3)) { text ->
             sel.sweet = text
         }
@@ -104,7 +109,16 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         }
 
         btnAddToCart.setOnClickListener {
-            if (sel.sweet == null || sel.ice == null) {
+            // 備註字數檢查（10）
+            val note = etNote.text?.toString()?.trim().orEmpty()
+            if (note.length > 10) {
+                tilNote.error = "最多 10 個字"
+                return@setOnClickListener
+            } else {
+                tilNote.error = null
+            }
+
+            if (sel.sweet.isNullOrBlank() || sel.ice.isNullOrBlank()) {
                 Toast.makeText(requireContext(), "請先選擇甜度與冰塊", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -113,24 +127,19 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
                 return@setOnClickListener
             }
 
-            // 寫入備註
-            sel.note = etNote.text?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            // 寫入備註（保持原字，避免影響中文輸入法）
+            sel.note = note.ifBlank { null }
 
-            // 加入購物車0
+            // 加入購物車
             repeat(qty) { CartManager.add(product, sel) }
 
-            // ✅ 回到商品清單（而不是切到底部購物車）
             Toast.makeText(requireContext(), "已加入購物車", Toast.LENGTH_SHORT).show()
 
-            // 明確返回到清單頁（在 nav_order 巢狀圖內）
+            // 返回到清單頁
             val nav = findNavController()
             val popped = nav.popBackStack(R.id.dest_product_list, false)
-            if (!popped) {
-                // 若因路徑不同沒找到目標，退一層也 OK（退回上一頁）
-                nav.popBackStack()
-            }
+            if (!popped) nav.popBackStack()
         }
-
     }
 
     private fun bindQuantity() {
@@ -140,11 +149,14 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
         render()
     }
 
+    /** 備註 10 字上限：只提示，不改字串，避免中文組字問題 */
     private fun bindNoteLimit() {
         etNote.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                etNote.error = if ((s?.length ?: 0) > 10) "最多 10 個字" else null
+                val len = s?.length ?: 0
+                tilNote.error = if (len > 10) "最多 10 個字" else null
+                // 不要在這裡 setText，避免中文輸入法問題
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -152,15 +164,18 @@ class ProductDetailFragment : Fragment(R.layout.fragment_product_detail) {
 
     private fun bindToppings() {
         val boxes = listOf(cbPearl, cbCoconut, cbPudding)
+        fun currentSelected(): MutableList<String> = buildList {
+            if (cbPearl.isChecked) add("珍珠")
+            if (cbCoconut.isChecked) add("椰果")
+            if (cbPudding.isChecked) add("布丁")
+        }.toMutableList()
+
         boxes.forEach { cb ->
-            cb.setOnCheckedChangeListener { _, _ ->
-                val selected = buildList {
-                    if (cbPearl.isChecked) add("珍珠")
-                    if (cbCoconut.isChecked) add("椰果")
-                    if (cbPudding.isChecked) add("布丁")
-                }
+            cb.setOnCheckedChangeListener { button, _ ->
+                val selected = currentSelected()
                 if (selected.size > 3) {
-                    cb.isChecked = false
+                    // 超過就撤銷最近這顆
+                    button.isChecked = false
                     Toast.makeText(requireContext(), "加料最多選 3 項", Toast.LENGTH_SHORT).show()
                     return@setOnCheckedChangeListener
                 }

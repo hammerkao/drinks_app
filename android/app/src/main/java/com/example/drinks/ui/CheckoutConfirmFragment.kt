@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.drinks.R
+import com.example.drinks.data.json.GsonProvider.gson
 import com.example.drinks.store.CartManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -22,6 +23,10 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.drinks.data.json.GsonProvider.gson
+import java.math.BigDecimal
+
+
 
 // networking
 import com.example.drinks.data.net.Api as DrinksApi
@@ -31,6 +36,7 @@ import com.example.drinks.net.NetCore
 import com.example.drinks.data.model.OrderCreateRequest
 import com.example.drinks.data.model.OrderDTO
 import com.example.drinks.data.model.OrderItemRequest
+import java.math.RoundingMode
 
 class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
 
@@ -129,50 +135,64 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
                 return@setOnClickListener
             }
 
-            // 取得 store_id（navArgs > CartManager）
-            val storeId = arguments?.getInt("store_id")?.takeIf { it > 0 }
-                ?: CartManager.currentStoreId
-                ?: run {
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setMessage("未取得分店資訊，請先選擇分店。")
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show()
-                    return@setOnClickListener
-                }
+            MaterialAlertDialogBuilder(requireContext())
+                .setMessage("確定送出訂單？")
+                .setNegativeButton("取消", null)
+                .setPositiveButton("確定") { _, _ ->
+                    // 真的送單
+                    btnSubmit.isEnabled = false
+                    btnSubmit.text = "送出中..."
 
-            btnSubmit.isEnabled = false
-            btnSubmit.text = "送出中..."
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        try {
+                            val api = obtainApi()
 
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val api = obtainApi()
-                    val req = buildOrderRequest(storeId)
-                    val created: OrderDTO = api.createOrder(req)
+                            // 1) 先拍「成功頁要用的品項快照」
+                            val snapshot = CartManager.snapshotForSuccessPage()
 
-                    // 成功後清空本機購物車
-                    CartManager.clear()
+                            // 2) 取分店 id
+                            val storeId = arguments?.getInt("store_id")?.takeIf { it > 0 }
+                                ?: CartManager.currentStoreId
+                                ?: throw IllegalStateException("未取得分店資訊")
 
-                    val totalInt = (created.total ?: "").filter { it.isDigit() }.toIntOrNull() ?: 0
-                    val navArgs = Bundle().apply {
-                        putInt("orderId", created.id)
-                        putInt("total", totalInt)
-                        putString("storeName", CartManager.currentStoreName ?: "—")
-                        putString("pickupTime", nowTimeDisplay())
+                            // 3) 建請求並送出
+                            val req = buildOrderRequest(storeId)
+                            val created = api.createOrder(req)
+
+                            // 4) 成功後再清空購物車
+                            CartManager.clear()
+
+                            // 5) 導頁：把快照轉成 JSON 丟過去
+                            val totalInt = (created.total ?: "").filter { it.isDigit() }.toIntOrNull() ?: 0
+                            val args = Bundle().apply {
+                                putInt("orderId", created.id)
+                                putInt("total", totalInt)
+                                putString("storeName", CartManager.currentStoreName ?: "—")
+                                putString("pickupMethod", arguments?.getString("pickupMethod") ?: "自取")
+                                putString("paymentMethod", arguments?.getString("paymentMethod") ?: "—")
+                                putString("buyerName", arguments?.getString("buyerName") ?: "—")
+                                putString("buyerPhone", arguments?.getString("buyerPhone") ?: "—")
+                                putString("orderNote", arguments?.getString("orderNote").orEmpty())
+                                putString("createdAt", created.createdAt)   // 成功頁優先用後端時間
+                                putString("itemsJson", com.example.drinks.data.json.GsonProvider.gson.toJson(snapshot))
+                            }
+                            findNavController().navigate(
+                                R.id.action_checkoutConfirm_to_orderSuccess, args
+                            )
+                        } catch (e: Exception) {
+                            MaterialAlertDialogBuilder(requireContext())
+                                .setMessage("送出失敗：${e.message ?: "未知錯誤"}")
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show()
+                        } finally {
+                            btnSubmit.isEnabled = true
+                            btnSubmit.text = "送出訂單"
+                        }
                     }
-                    findNavController().navigate(
-                        R.id.action_checkoutConfirm_to_orderSuccess, navArgs
-                    )
-                } catch (e: Exception) {
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setMessage("送出失敗：${e.message ?: "未知錯誤"}")
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show()
-                } finally {
-                    btnSubmit.isEnabled = true
-                    btnSubmit.text = "送出訂單"
                 }
-            }
+                .show()
         }
+
     }
 
     // ======= Render =======
@@ -251,8 +271,10 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
         NumberFormat.getCurrencyInstance(Locale.TAIWAN).format(n)
 
     private fun nowTimeDisplay(): String {
-        val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.TAIWAN)
-        return sdf.format(Date())
+        val tz = java.util.TimeZone.getTimeZone("Asia/Taipei")
+        val sdf = java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", java.util.Locale.TAIWAN)
+        sdf.timeZone = tz
+        return sdf.format(java.util.Date())
     }
 
     // ======= 方法 B：組下單 Request（直接送 items） =======

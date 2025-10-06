@@ -24,6 +24,11 @@ from .serializers import (
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 
+# ===== 共用：把客製選項轉成 key（避免同品項不同客製被合併） =====
+def build_options_key(sweet, ice, toppings, note):
+    tops = ",".join(sorted((toppings or [])))
+    return f"{sweet or ''}|{ice or ''}|{tops}|{note or ''}"
+
 
 # ---------- Store ----------
 class StoreViewSet(viewsets.ModelViewSet):
@@ -56,6 +61,7 @@ class ProductFilter(filters.FilterSet):
         model = Product
         fields = ["is_active", "min_price", "max_price", "category"]
 
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = (
         Product.objects
@@ -80,6 +86,7 @@ class VariantFilter(filters.FilterSet):
     class Meta:
         model = Variant
         fields = ["product", "is_active", "min_price", "max_price"]
+
 
 class VariantViewSet(viewsets.ModelViewSet):
     queryset = Variant.objects.select_related("product").order_by("product_id", "price", "id")
@@ -114,11 +121,6 @@ class CartViewSet(viewsets.GenericViewSet):
         cart = self.get_object()
         return Response(self.get_serializer(cart).data)
 
-    @staticmethod
-    def build_options_key(sweet, ice, toppings, note):
-        tops = ",".join(sorted(toppings or []))
-        return f"{sweet or ''}|{ice or ''}|{tops}|{note or ''}"
-
     @action(detail=False, methods=["post"], url_path="add_item")
     def add_item(self, request):
         cart = self.get_object()
@@ -137,7 +139,7 @@ class CartViewSet(viewsets.GenericViewSet):
         note    = data.get("note")
         options_price = Decimal(str(data.get("options_price", 0)))
 
-        options_key = self.build_options_key(sweet, ice, toppings, note)
+        options_key = build_options_key(sweet, ice, toppings, note)
 
         item, created = CartItem.objects.get_or_create(
             cart=cart, product=product, options_key=options_key,
@@ -190,14 +192,13 @@ class CartViewSet(viewsets.GenericViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
 # ---------- Order ----------
 class OrderViewSet(viewsets.ModelViewSet):
     """
     建立訂單：
       - 若 request.data 有 items（product_id/qty/options_price...），直接用 items 建單
       - 否則從目前購物車生成
-    金額計算： (product.price + options_price) * qty
+    金額計算：(product.price + options_price) * qty
     """
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -205,7 +206,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = (
             Order.objects
-            .select_related("user", "store")           # ← 多抓 store
+            .select_related("user", "store")
             .prefetch_related("items__product")
             .order_by("-id")
         )
@@ -214,6 +215,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         data = request.data
+
+        # 解析分店
         store_id = data.get("store_id") or data.get("store")
         store = None
         if store_id:
@@ -222,10 +225,19 @@ class OrderViewSet(viewsets.ModelViewSet):
             except (ValueError, Store.DoesNotExist):
                 return Response({"detail": "store_id 無效"}, status=400)
 
+        # ★ 接住訂單備註（整張訂單）
+        order_note = (data.get("order_note") or "").strip()
+
+        # ★ 只建立一次，後面兩種流程都重用這個 order
+        order = Order.objects.create(
+            user=request.user,
+            store=store,
+            order_note=order_note,
+        )
+
         items_data = data.get("items")
         if items_data:
-            # ===== B 方案：直接用 payload 建單 =====
-            order = Order.objects.create(user=request.user, store=store)
+            # ===== B 方案：直接使用 payload items 建單（不再重新 create order！） =====
             total = Decimal("0.00")
             bulk = []
             for it in items_data:
@@ -252,13 +264,12 @@ class OrderViewSet(viewsets.ModelViewSet):
             ser = self.get_serializer(order)
             return Response(ser.data, status=status.HTTP_201_CREATED)
 
-        # ===== A 方案回退：從購物車轉單（保留你的舊邏輯；此處略） =====
+        # ===== A 方案：從購物車轉單 =====
         cart, _ = Cart.objects.get_or_create(user=request.user)
         cart_items = list(cart.items.select_related("product"))
         if not cart_items:
             return Response({"detail": "購物車是空的"}, status=400)
 
-        order = Order.objects.create(user=request.user, store=store)
         total = Decimal("0.00")
         bulk = []
         for ci in cart_items:

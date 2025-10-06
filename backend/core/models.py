@@ -121,6 +121,9 @@ class Order(models.Model):
                                  validators=[MinValueValidator(0)], default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # ★ 新增：訂單備註（整張訂單的備註）
+    order_note = models.CharField(max_length=50, blank=True, null=True)
+
     def __str__(self):
         return f"Order#{self.pk} ({self.status})"
 

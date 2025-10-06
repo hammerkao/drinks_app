@@ -290,14 +290,29 @@
                 android:layout_height="wrap_content"
                 android:text="備註（10 個字內）"
                 android:layout_marginTop="12dp" />
-            <EditText
-                android:id="@+id/etNote"
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilNote"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="例如：少冰、不要封膜太緊"
-                android:maxLength="10"
-                android:padding="12dp"
-                android:background="@android:drawable/edit_text" />
+                app:counterEnabled="true"
+                app:counterMaxLength="10">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="例如：少冰、不要封膜太緊"
+                    android:maxLength="10"
+                    android:minLines="1"
+                    android:maxLines="3"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:imeOptions="actionDone|flagNoFullscreen"
+                    android:padding="12dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
 
             <!-- 預留底部 padding，避免內容被 footer 遮住（多保險） -->
             <Space

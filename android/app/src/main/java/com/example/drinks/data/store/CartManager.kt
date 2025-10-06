@@ -24,8 +24,31 @@ object CartManager {
 
     /** 目前購物車明細（改成 private，避免外部直接改而沒通知） */
     private val lines: MutableList<CartLine> = mutableListOf()
-    /** 如果外部需要讀取，提供唯讀快照 */
+
+    /** 供外部讀取的唯讀快照 */
     fun getLines(): List<CartLine> = lines.toList()
+
+    /** 成功頁使用的最近一次快照（深拷貝） */
+    private var lastSnapshot: List<CartLine> = emptyList()
+
+    /** 產出成功頁要用的品項快照（深拷貝），並記住 */
+    fun snapshotForSuccessPage(): List<CartLine> {
+        lastSnapshot = deepCopy(lines)
+        return lastSnapshot
+    }
+
+    /** 讀取最近一次的快照（若尚未拍過，回空陣列） */
+    fun lastSnapshotLines(): List<CartLine> = lastSnapshot
+
+    /** 深拷貝，避免清空購物車後成功頁內容消失或被後續修改影響 */
+    private fun deepCopy(src: List<CartLine>): List<CartLine> =
+        src.map { line ->
+            line.copy(
+                selected = line.selected.copy(
+                    toppings = line.selected.toppings.toMutableList()
+                )
+            )
+        }
 
     /** 100.00 -> 100（元） */
     private fun parsePriceToInt(price: String): Int = try {
@@ -36,7 +59,6 @@ object CartManager {
 
     /** 產生一筆明細的 key（商品 + 客製條件） */
     private fun lineKey(pid: Int, sel: SelectedOptions): String {
-        // toppings 排序，避免同選項不同順序導致重複
         val tops = sel.toppings.sorted().joinToString("+")
         return "${pid}|${sel.sweet.orEmpty()}|${sel.ice.orEmpty()}|$tops"
     }
@@ -54,7 +76,7 @@ object CartManager {
 
     /** 加入 1 杯（相同商品+客製就合併數量） */
     fun add(product: Product, sel: SelectedOptions) {
-        add(product, sel, 1)            // ← 這裡不要再發事件，交給下面那支統一發
+        add(product, sel, 1)
     }
 
     /** 加入多杯（可指定 qty） */
@@ -68,19 +90,16 @@ object CartManager {
         if (idx >= 0) {
             lines[idx].qty += qty
         } else {
-            // CartManager.kt 內
             lines += CartLine(
                 productId    = product.id,
                 name         = product.name,
                 qty          = qty,
                 unitPrice    = parsePriceToInt(product.price),
                 optionsPrice = optionsPrice(sel),
-                // ★ toppings 建議排序一下避免同組合不同順序視為不同 key
                 selected     = sel.copy(toppings = sel.toppings.sorted().toMutableList()),
                 lineKey      = key,
                 imageUrl     = product.imageUrl
             )
-
         }
         _changes.value = Unit
     }
@@ -113,7 +132,7 @@ object CartManager {
         _changes.value = Unit
     }
 
-    /** 是否為空 / 全部數量 / 總金額（語意化 API 給 UI 用） */
+    /** 是否為空 / 全部數量 / 總金額 */
     fun isEmpty(): Boolean = lines.isEmpty()
     fun count(): Int = lines.sumOf { it.qty }
     fun totalAmount(): Int = total()

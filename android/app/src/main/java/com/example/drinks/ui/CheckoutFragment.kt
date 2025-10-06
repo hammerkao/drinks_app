@@ -16,6 +16,7 @@ import com.example.drinks.store.CartManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -39,7 +40,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
     private lateinit var rgPayment: RadioGroup
     private lateinit var rbCash: RadioButton
 
+    private lateinit var tilOrderNote: TextInputLayout
     private lateinit var etOrderNote: TextInputEditText
+
     private lateinit var btnNext: MaterialButton
 
     // ✅ 結帳頁僅顯示，不允許調整數量
@@ -56,10 +59,9 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         super.onViewCreated(view, savedInstanceState)
 
         // Toolbar + 返回鍵（白色）
-        val toolbar = view.findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        toolbar = view.findViewById(R.id.toolbar)
         val btnBack = view.findViewById<ImageButton>(R.id.btnNavBack)
         val tvTitle = view.findViewById<TextView>(R.id.tvToolbarTitle)
-
         tvTitle.text = "訂單結算"
         btnBack.setOnClickListener { findNavController().popBackStack() }
 
@@ -77,8 +79,10 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
         rgPayment = view.findViewById(R.id.rgPayment)
         rbCash    = view.findViewById(R.id.rbCash)
 
-        etOrderNote = view.findViewById(R.id.etOrderNote)
-        btnNext     = view.findViewById(R.id.btnCheckoutNext)
+        tilOrderNote = view.findViewById(R.id.tilOrderNote)
+        etOrderNote  = view.findViewById(R.id.etOrderNote)
+
+        btnNext = view.findViewById(R.id.btnCheckoutNext)
 
         // ===== 取得分店資訊（安全讀取）=====
         val storeIdFromArgs = arguments?.getInt("store_id", 0) ?: 0
@@ -136,9 +140,20 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
             }
         })
 
-        // 下一步
+        // 「下一步」
         btnNext.setOnClickListener {
+            // 先做表單檢查
             if (!ensureFormValid()) return@setOnClickListener
+
+            // 訂單備註長度限制（50）
+            val note = etOrderNote.text?.toString()?.trim().orEmpty()
+            if (note.length > 50) {
+                tilOrderNote.error = "最多 50 字"
+                return@setOnClickListener
+            } else {
+                tilOrderNote.error = null
+            }
+
             if (CartManager.isEmpty()) {
                 Toast.makeText(requireContext(), "購物車為空", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -150,14 +165,11 @@ class CheckoutFragment : Fragment(R.layout.fragment_checkout) {
                 ?.text?.toString() ?: "現金"
             val buyerName  = etBuyerName.text?.toString()?.trim().orEmpty()
             val buyerPhone = etBuyerPhone.text?.toString()?.trim().orEmpty()
-            val orderNote  = etOrderNote.text?.toString()?.trim().orEmpty()
-
-            // 再次保險的 storeId（沿用前面解析出的值）
-            val safeStoreId = storeId
+            val orderNote  = note
 
             // 導頁 + 帶參數
             val args = Bundle().apply {
-                putInt("store_id", safeStoreId)
+                putInt("store_id", storeId)
                 putString("store_name", storeName)
                 putString("pickupMethod", pickupMethod)
                 putString("paymentMethod", paymentMethod)
