@@ -4,18 +4,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_main"
     app:startDestination="@id/nav_branch_list">
-
-    <!-- 仍然保留選分店 -->
+    <action
+        android:id="@+id/action_global_orderDetail"
+        app:destination="@id/orderDetailFragment" />
+    <!-- 選擇分店 -->
     <fragment
         android:id="@+id/nav_branch_list"
         android:name="com.example.drinks.ui.SelectStoreFragment"
-        android:label="選擇分店">
+        android:label="選擇分店"
+        tools:layout="@layout/fragment_select_store">
         <action
             android:id="@+id/action_selectStore_to_productList"
             app:destination="@id/nav_order" />
     </fragment>
 
-    <!-- ✅ 點餐 Tab：用巢狀 NavGraph，id 要跟 BottomNav 對應 -->
+    <!-- 點餐 Tab（巢狀 Graph，id 要與 BottomNav 對應） -->
     <navigation
         android:id="@+id/nav_order"
         app:startDestination="@id/dest_product_list">
@@ -23,7 +26,8 @@
         <fragment
             android:id="@+id/dest_product_list"
             android:name="com.example.drinks.ui.ProductListFragment"
-            android:label="商品清單">
+            android:label="商品清單"
+            tools:layout="@layout/fragment_product_list">
             <argument
                 android:name="store_id"
                 app:argType="integer" />
@@ -36,7 +40,8 @@
         <fragment
             android:id="@+id/dest_product_detail"
             android:name="com.example.drinks.ui.ProductDetailFragment"
-            android:label="餐點細項">
+            android:label="餐點細項"
+            tools:layout="@layout/fragment_product_detail">
             <argument
                 android:name="productJson"
                 app:argType="string"
@@ -48,59 +53,90 @@
         </fragment>
     </navigation>
 
-    <!-- ✅ 購物車仍是頂層目的地（對應 BottomNav 的 cart item） -->
+    <!-- 購物車（對應 BottomNav） -->
     <fragment
         android:id="@+id/nav_cart"
         android:name="com.example.drinks.ui.CartFragment"
-        android:label="購物車" />
+        android:label="購物車"
+        tools:layout="@layout/fragment_cart" />
 
-    <!-- 結帳頁（現有的 CheckoutFragment） -->
+    <!-- 結帳頁 -->
     <fragment
         android:id="@+id/nav_checkout"
         android:name="com.example.drinks.ui.CheckoutFragment"
         android:label="訂單結算"
         tools:layout="@layout/fragment_checkout">
-
-        <!-- 從 CheckoutFragment 指到 Confirm 的 action -->
         <action
             android:id="@+id/action_checkout_to_checkoutConfirm"
             app:destination="@id/checkoutConfirmFragment" />
     </fragment>
 
-    <!-- 目的地：CheckoutConfirmFragment -->
+    <!-- 確認訂單 -->
     <fragment
         android:id="@+id/checkoutConfirmFragment"
         android:name="com.example.drinks.ui.CheckoutConfirmFragment"
         android:label="確認訂單"
         tools:layout="@layout/fragment_checkout_confirm">
-0
-        <!-- ✅ 從確認訂單頁 → 完成頁（把 action 放在這裡才找得到） -->
         <action
             android:id="@+id/action_checkoutConfirm_to_orderSuccess"
             app:destination="@id/orderSuccessFragment"
             app:launchSingleTop="true" />
     </fragment>
 
-    <!-- 訂單完成頁 -->
+    <!-- 下單成功 -->
     <fragment
         android:id="@+id/orderSuccessFragment"
         android:name="com.example.drinks.ui.OrderSuccessFragment"
         android:label="下單成功"
         tools:layout="@layout/fragment_order_success">
-        <argument
-            android:name="orderId"
-            app:argType="integer" />
-        <argument
-            android:name="total"
-            app:argType="integer" />
-        <argument
-            android:name="storeName"
-            app:argType="string"
-            app:nullable="true" />
-        <argument
-            android:name="pickupTime"
-            app:argType="string"
-            app:nullable="true" />
+        <argument android:name="orderId"   app:argType="integer" />
+        <argument android:name="total"     app:argType="integer" />
+        <argument android:name="storeName" app:argType="string" app:nullable="true" />
+        <argument android:name="pickupTime" app:argType="string" app:nullable="true" />
+
+        <!-- 新增：從成功頁 → 訂單詳情 -->
+        <action
+            android:id="@+id/action_orderSuccess_to_orderDetail"
+            app:destination="@id/orderDetailFragment"
+            app:launchSingleTop="true"
+            app:popUpTo="@id/orderSuccessFragment"
+            app:popUpToInclusive="true" />
     </fragment>
+
+    <!-- 訂單列表 -->
+    <navigation
+        android:id="@+id/nav_orders"
+        app:startDestination="@id/ordersFragment">
+
+        <fragment
+            android:id="@+id/ordersFragment"
+            android:name="com.example.drinks.ui.orders.OrdersFragment"
+            android:label="Orders"
+            tools:layout="@layout/fragment_orders">
+            <action
+                android:id="@+id/action_orders_to_orderDetail"
+                app:destination="@id/orderDetailFragment" />
+        </fragment>
+
+        <fragment
+            android:id="@+id/orderDetailFragment"
+            android:name="com.example.drinks.ui.orders.OrderDetailFragment"
+            android:label="Order Detail"
+            tools:layout="@layout/fragment_order_detail">
+            <argument
+                android:name="order_id"
+                app:argType="integer" />
+            <!-- 其餘可選參數（若要用快照渲染） -->
+            <argument android:name="storeName"     app:argType="string" app:nullable="true"/>
+            <argument android:name="pickupMethod"  app:argType="string" app:nullable="true"/>
+            <argument android:name="pickupTime"    app:argType="string" app:nullable="true"/>
+            <argument android:name="buyerName"     app:argType="string" app:nullable="true"/>
+            <argument android:name="buyerPhone"    app:argType="string" app:nullable="true"/>
+            <argument android:name="paymentMethod" app:argType="string" app:nullable="true"/>
+            <argument android:name="orderNote"     app:argType="string" app:nullable="true"/>
+            <argument android:name="total"         app:argType="integer" android:defaultValue="0"/>
+            <argument android:name="itemsJson"     app:argType="string" app:nullable="true"/>
+        </fragment>
+    </navigation>
 
 </navigation>

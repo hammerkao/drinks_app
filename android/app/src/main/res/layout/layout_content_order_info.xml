@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/orderContentRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp">
+
+    <!-- 店家資訊卡（id 與結帳頁一致） -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardUseCompatPadding="true"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvStoreName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="—"
+                android:textStyle="bold"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tvStorePhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="電話：—"
+                android:layout_marginTop="6dp"
+                android:textSize="13sp"
+                android:alpha="0.8" />
+
+            <TextView
+                android:id="@+id/tvStoreAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="地址：—"
+                android:textSize="13sp"
+                android:alpha="0.8" />
+
+            <TextView
+                android:id="@+id/tvStoreHours"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="營業時間：—"
+                android:textSize="13sp"
+                android:alpha="0.8" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 您的餐點（同 CheckoutConfirmFragment 用的 id） -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="您的餐點"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 可展開/收合的列表；CheckoutConfirm/OrderSuccess 兩頁都用這些 id -->
+    <LinearLayout
+        android:id="@+id/previewContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+    <ImageButton
+        android:id="@+id/btnToggleItems"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="center_horizontal"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/ic_arrow_down_24"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 訂單資訊 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="訂單資訊"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvPickupMethod"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="取餐方式：—"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvPickupTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="取餐時間：—"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvBuyerName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="訂購人：—"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvBuyerPhone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="聯絡電話：—"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvPaymentMethod"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="付款方式：—"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvOrderNote"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="訂單備註："
+        android:visibility="gone"
+        android:layout_marginBottom="12dp" />
+
+    <!-- 應付金額 -->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end|center_vertical"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="應付金額"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tvTotalAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$0"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+</LinearLayout>

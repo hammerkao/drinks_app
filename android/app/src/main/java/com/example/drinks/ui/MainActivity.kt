@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity() {
         when (i?.getStringExtra("open_tab")) {
             "cart"  -> bottom.selectedItemId = R.id.nav_cart
             "order" -> bottom.selectedItemId = R.id.nav_order
+            "orders" -> bottom.selectedItemId = R.id.nav_orders   // ← 新增
         }
     }
 }
