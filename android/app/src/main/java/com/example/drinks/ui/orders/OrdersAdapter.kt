@@ -6,8 +6,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.drinks.R
+import com.example.drinks.data.cache.StoreCatalog
 import com.example.drinks.data.model.OrderDTO
 import com.google.android.material.button.MaterialButton
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 class OrdersAdapter(
     private val onClick: (OrderDTO) -> Unit
@@ -22,9 +25,9 @@ class OrdersAdapter(
     }
 
     inner class VH(v: View) : RecyclerView.ViewHolder(v) {
-        val tvStore: TextView = v.findViewById(R.id.tvStore)      // 標題列：顯示「訂單 #編號」
-        val tvMeta: TextView = v.findViewById(R.id.tvMeta)        // 次行：金額 + 時間
-        val btn: MaterialButton = v.findViewById(R.id.btnContent) // 「內容」按鈕
+        val tvStoreName: TextView   = v.findViewById(R.id.tvStoreName)
+        val tvAmount: TextView      = v.findViewById(R.id.tvAmount)
+        val btnContent: MaterialButton = v.findViewById(R.id.btnContent)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -36,25 +39,24 @@ class OrdersAdapter(
     override fun onBindViewHolder(h: VH, position: Int) {
         val o = items[position]
 
-        // 沒有 store 物件就用訂單編號當標題
-        h.tvStore.text = "訂單 #${o.id}"
+        // 分店名稱：快取優先，否則退為「門市 #id」或 "—"
+        val storeName = StoreCatalog.nameOf(o.storeId)
+            ?: o.storeId?.let { if (it > 0) "門市 #$it" else "—" } ?: "—"
+        h.tvStoreName.text = storeName
 
-        val totalText = o.total?.let { if (it.endsWith(".00")) it.dropLast(3) else it } ?: "—"
-        val timeText  = o.createdAt?.let { formatToLocal(it) } ?: "—"
+        // 金額：後端 total 多為字串，安全轉整數後顯示
+        val totalInt = moneyStringToInt(o.total)
+        h.tvAmount.text = "金額：$totalInt"
 
-        h.tvMeta.text = "金額：$totalText   時間：$timeText"
-
-        h.btn.setOnClickListener { onClick(o) }
+        h.btnContent.setOnClickListener { onClick(o) }
         h.itemView.setOnClickListener { onClick(o) }
     }
 
     override fun getItemCount(): Int = items.size
 }
 
-private fun formatToLocal(iso: String): String = try {
-    val odt = java.time.OffsetDateTime.parse(iso)
-    odt.atZoneSameInstant(java.time.ZoneId.systemDefault())
-        .format(java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
-} catch (_: Exception) {
-    iso
-}
+/* Helpers */
+private fun moneyStringToInt(s: String?): Int = try {
+    if (s.isNullOrBlank()) 0
+    else BigDecimal(s).setScale(0, RoundingMode.HALF_UP).toInt()
+} catch (_: Exception) { 0 }

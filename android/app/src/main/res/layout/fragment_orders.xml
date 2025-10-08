@@ -1,23 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- res/layout/fragment_orders.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
-        android:layout_width="match_parent" android:layout_height="?attr/actionBarSize"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
         android:background="@color/brand_gold">
+
         <TextView
-            android:id="@+id/tvToolbarTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_gravity="center" android:text="訂單明細" android:textColor="@android:color/white"
-            android:textStyle="bold" android:textSize="18sp"/>
+            android:id="@+id/tvToolbarTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="我的訂單"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
     </com.google.android.material.appbar.MaterialToolbar>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvOrders" android:layout_width="match_parent" android:layout_height="0dp"
-        android:layout_weight="1" android:padding="12dp" android:clipToPadding="false"/>
+        android:id="@+id/rvOrders"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:clipToPadding="false" />
 
     <TextView
-        android:id="@+id/emptyView" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="目前沒有訂單" android:gravity="center" android:padding="24dp" android:visibility="gone"/>
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="目前沒有訂單"
+        android:gravity="center"
+        android:visibility="gone"/>
 </LinearLayout>

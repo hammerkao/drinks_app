@@ -15,6 +15,7 @@ import okhttp3.Response
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import com.example.drinks.data.model.OrderDTO
 
 class Api(
     private val base: String,
@@ -74,6 +75,9 @@ class Api(
     }
 
     /* -------------------- Products -------------------- */
+
+    /** 單一訂單詳情（提供給詳情頁使用） */
+    suspend fun getOrderDetail(id: Int): OrderDTO = get("orders/$id/")
 
     suspend fun listProducts(
         search: String? = null,
@@ -236,6 +240,6 @@ class Api(
         }
     }
 
-    /** 單一訂單詳情 */
+    /** 單一訂單詳情（別名，與 getOrderDetail 相同） */
     suspend fun getOrder(id: Int): OrderDTO = get("orders/$id/")
 }

@@ -21,14 +21,11 @@ data class OrderItemDTO(
 
 data class OrderDTO(
     val id: Int,
-
-    // 後端回傳的是 store 的整數 ID，不是整個物件
     @SerializedName("store") val storeId: Int? = null,
-
     val status: String? = null,
     val total: String? = null,
     @SerializedName("created_at") val createdAt: String? = null,
-    @SerializedName("items") val items: List<CartItemDTO>? = null
+    @SerializedName("items") val items: List<OrderItemDTO>? = null   // ← 這裡要是 OrderItemDTO
 )
 
 /* ========== 建單請求用 DTO ========== */
