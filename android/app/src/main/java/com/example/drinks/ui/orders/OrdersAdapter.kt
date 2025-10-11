@@ -40,13 +40,15 @@ class OrdersAdapter(
         val o = items[position]
 
         // 分店名稱：快取優先，否則退為「門市 #id」或 "—"
-        val storeName = StoreCatalog.nameOf(o.storeId)
-            ?: o.storeId?.let { if (it > 0) "門市 #$it" else "—" } ?: "—"
+        val storeName = o.storeId?.let { id ->
+            StoreCatalog.nameOf(id) ?: if (id > 0) "門市 #$id" else "—"
+        } ?: "—"
         h.tvStoreName.text = storeName
 
-        // 金額：後端 total 多為字串，安全轉整數後顯示
+        // 金額：建議用 TWD 格式化（或保留你原本的整數顯示）
         val totalInt = moneyStringToInt(o.total)
-        h.tvAmount.text = "金額：$totalInt"
+        h.tvAmount.text = formatTwd(totalInt)   // ← 下面有 formatTwd()
+        // 若想維持原文：h.tvAmount.text = "金額：$totalInt"
 
         h.btnContent.setOnClickListener { onClick(o) }
         h.itemView.setOnClickListener { onClick(o) }
@@ -60,3 +62,6 @@ private fun moneyStringToInt(s: String?): Int = try {
     if (s.isNullOrBlank()) 0
     else BigDecimal(s).setScale(0, RoundingMode.HALF_UP).toInt()
 } catch (_: Exception) { 0 }
+
+private fun formatTwd(n: Int): String =
+    java.text.NumberFormat.getCurrencyInstance(java.util.Locale.TAIWAN).format(n)

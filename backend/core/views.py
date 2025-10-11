@@ -10,6 +10,9 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters
 
+from django.utils.dateparse import parse_datetime
+from django.utils import timezone
+
 from .models import (
     Category, Product, Variant,
     Cart, CartItem,
@@ -226,29 +229,46 @@ class OrderViewSet(viewsets.ModelViewSet):
                 return Response({"detail": "store_id 無效"}, status=400)
 
         # ★ 接住訂單備註（整張訂單）
-        order_note = (data.get("order_note") or "").strip()
+        buyer_name     = (data.get("buyer_name") or "").strip() or None
+        buyer_phone    = (data.get("buyer_phone") or "").strip() or None
+        payment_method = (data.get("payment_method") or "").strip() or None   # e.g. "cash"
+        pickup_method  = (data.get("pickup_method") or "").strip() or None    # e.g. "pickup"
+        order_note     = (data.get("order_note") or "").strip() or None
+
+         # pickup_time 轉成 aware datetime
+        pickup_time = None
+        if data.get("pickup_time"):
+            dt = parse_datetime(data["pickup_time"])
+            if dt is not None and timezone.is_naive(dt):
+                dt = timezone.make_aware(dt, timezone.get_current_timezone())
+            pickup_time = dt
 
         # ★ 只建立一次，後面兩種流程都重用這個 order
         order = Order.objects.create(
             user=request.user,
             store=store,
+            buyer_name=buyer_name,
+            buyer_phone=buyer_phone,
+            payment_method=payment_method,
+            pickup_method=pickup_method,
+            pickup_time=pickup_time,
             order_note=order_note,
         )
 
         items_data = data.get("items")
         if items_data:
-            # ===== B 方案：直接使用 payload items 建單（不再重新 create order！） =====
+            # ===== 方法 B：payload items 建單 =====
             total = Decimal("0.00")
             bulk = []
             for it in items_data:
                 product = get_object_or_404(Product, pk=it.get("product_id"), is_active=True)
                 qty = int(it.get("qty", 1))
-                unit_price = Decimal(str(it.get("unit_price", product.price)))
+                unit_price    = Decimal(str(it.get("unit_price", product.price)))
                 options_price = Decimal(str(it.get("options_price", 0)))
-                sweet = it.get("sweet") or None
-                ice   = it.get("ice") or None
-                toppings = it.get("toppings") or []
-                note  = it.get("note") or None
+                sweet   = it.get("sweet") or None
+                ice     = it.get("ice") or None
+                toppings= it.get("toppings") or []
+                note    = it.get("note") or None
                 options_key = it.get("options_key") or build_options_key(sweet, ice, toppings, note)
 
                 total += (unit_price + options_price) * qty
@@ -260,11 +280,11 @@ class OrderViewSet(viewsets.ModelViewSet):
                 ))
             OrderItem.objects.bulk_create(bulk)
             order.total = total
-            order.save(update_fields=["total"])
+            order.save(update_fields=["total"])  # 其他欄位已在 create() 寫入
             ser = self.get_serializer(order)
             return Response(ser.data, status=status.HTTP_201_CREATED)
 
-        # ===== A 方案：從購物車轉單 =====
+        # ===== 方法 A：從購物車轉單 =====
         cart, _ = Cart.objects.get_or_create(user=request.user)
         cart_items = list(cart.items.select_related("product"))
         if not cart_items:

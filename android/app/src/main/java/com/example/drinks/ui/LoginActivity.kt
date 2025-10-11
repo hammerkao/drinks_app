@@ -1,7 +1,6 @@
 package com.example.drinks.ui
 
 import android.content.Intent
-import retrofit2.HttpException
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -15,16 +14,15 @@ import com.example.drinks.net.AuthApi
 import com.example.drinks.net.NetCore
 import com.example.drinks.store.TokenStore
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import java.io.IOException
-import kotlin.jvm.java
 
 class LoginActivity : AppCompatActivity() {
+
     private lateinit var etPhone: EditText
     private lateinit var etPassword: EditText
     private lateinit var progress: ProgressBar
     private val authApi: AuthApi by lazy { NetCore.getRetrofit(this).create(AuthApi::class.java) }
-
-    private val tokenStore by lazy { TokenStore(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,16 +48,29 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun doLogin(phone: String, password: String) {
-        //（可選）避免用舊 token 登入，先清掉
-        tokenStore.clear()
+        // 乾淨起見：先清掉舊 token（避免帶舊憑證）
+        TokenStore.clear()
 
-        // progress.visibility = View.VISIBLE
+        progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
+                // 依你的後端：使用 phone/password 登入
                 val resp = authApi.login(mapOf("phone" to phone, "password" to password))
-                // 注意：如果你的後端回傳是 {"access": "..."}，要改成 resp.access
-                tokenStore.save(resp.token)
 
+                // 兼容：access/refresh 或舊版 token 欄位
+                val access = resp.access ?: resp.legacyToken
+                val refresh = resp.refresh
+                if (access.isNullOrEmpty()) {
+                    Toast.makeText(this@LoginActivity, "登入回應缺少 access token", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                // 存到 TokenStore（object 版本）
+                TokenStore.set(access, refresh)
+
+                // （可選）若要自動登入，可另外持久化到 SharedPreferences，再在 App 啟動時讀回 TokenStore
+
+                // 進入主畫面
                 val it = Intent(this@LoginActivity, MainActivity::class.java)
                 it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(it)
@@ -68,7 +79,11 @@ class LoginActivity : AppCompatActivity() {
             } catch (e: HttpException) {
                 val body = e.response()?.errorBody()?.string()
                 Log.e("Login", "HTTP ${e.code()} body=$body", e)
-                Toast.makeText(this@LoginActivity, "登入失敗：${e.code()}", Toast.LENGTH_SHORT).show()
+                val msg = when (e.code()) {
+                    400, 401 -> "帳號或密碼錯誤"
+                    else -> "登入失敗：HTTP ${e.code()}"
+                }
+                Toast.makeText(this@LoginActivity, msg, Toast.LENGTH_SHORT).show()
             } catch (e: IOException) {
                 Log.e("Login", "network error", e)
                 Toast.makeText(this@LoginActivity, "網路錯誤，請檢查連線", Toast.LENGTH_SHORT).show()
@@ -76,10 +91,8 @@ class LoginActivity : AppCompatActivity() {
                 Log.e("Login", "unknown error", e)
                 Toast.makeText(this@LoginActivity, "發生錯誤：${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
-                // progress.visibility = View.GONE
+                progress.visibility = View.GONE
             }
         }
     }
 }
-
-

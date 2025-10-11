@@ -1,4 +1,3 @@
-// OrderDetailFragment.kt
 package com.example.drinks.ui.orders
 
 import android.os.Bundle
@@ -14,17 +13,19 @@ import androidx.navigation.fragment.findNavController
 import com.example.drinks.R
 import com.example.drinks.data.cache.StoreCatalog
 import com.example.drinks.data.model.CartLine
-import com.example.drinks.data.model.SelectedOptions
-import com.example.drinks.data.model.OrderItemDTO
 import com.example.drinks.data.model.Options
+import com.example.drinks.data.model.OrderItemDTO
+import com.example.drinks.data.model.SelectedOptions
+import com.example.drinks.data.net.Api
+import com.example.drinks.net.NetCore
 import com.google.android.material.appbar.MaterialToolbar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Locale
-import com.example.drinks.data.json.GsonProvider.gson
-
 
 class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
 
@@ -50,7 +51,6 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
     private lateinit var tvOrderNote: TextView
     private lateinit var tvTotalAmount: TextView
 
-    // 資料
     private var lines: List<CartLine> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -84,84 +84,94 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
             return
         }
 
-        // 初始畫面
-        renderStoreBlock("—")
-        renderOrderBlock("自取", "—", "—", "—", "—", "", 0)
+        // 預設畫面
+        renderStoreBlock("—", "—", "—", "—")
+        renderOrderBlock("—", "—", "—", "—", "現金", "", 0)
         renderItemsPreview(false)
 
-        // 以後端為準載入詳情
         fetchFromBackend(orderId)
     }
-    private suspend fun resolveStoreName(
-        api: com.example.drinks.data.net.Api,
-        storeId: Int?
-    ): String {
-        if (storeId == null || storeId <= 0) return "—"
 
-        // 1) 先查快取
-        com.example.drinks.data.cache.StoreCatalog.nameOf(storeId)?.let { return it }
-
-        // 2) 快取沒有 → 打 stores API，補回快取
-        return try {
-            val stores = api.getStores()
-            val hit = stores.firstOrNull { it.id == storeId }
-            val name = hit?.name?.takeIf { it.isNotBlank() } ?: "門市 #$storeId"
-            com.example.drinks.data.cache.StoreCatalog.put(storeId, hit?.name)
-            name
-        } catch (_: Exception) {
-            "門市 #$storeId"
-        }
-    }
-
-    /* === 以後端為準載入 === */
     private fun fetchFromBackend(orderId: Int) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val api = com.example.drinks.data.net.Api(
-                    base = com.example.drinks.net.NetCore.BASE_URL,
-                    client = com.example.drinks.net.NetCore.buildOkHttp(requireContext())
-                )
+                val api = Api(base = NetCore.BASE_URL, client = NetCore.buildOkHttp(requireContext()))
 
-                // 優先用 /orders/{id}；沒有就退用 list + find
-                val detail = runCatching { api.getOrderDetail(orderId) }.getOrNull()
-                    ?: api.listOrders().firstOrNull { it.id == orderId }
-                    ?: run {
-                        Toast.makeText(requireContext(), "找不到訂單", Toast.LENGTH_SHORT).show()
-                        return@launch
+                // 主資料
+                val detail = withContext(Dispatchers.IO) { api.getOrderDetail(orderId) }
+
+                /* ---------- 分店資訊（含 open_hours） ---------- */
+                val storeId = detail.storeId
+                var storeName: String? = storeId?.let { StoreCatalog.nameOf(it) }
+                var storePhone: String? = null
+                var storeAddress: String? = null
+                var storeHours: String? = null
+
+                if (storeId != null) {
+                    withContext(Dispatchers.IO) {
+                        runCatching { api.getStores() }.onSuccess { stores ->
+                            val hit = stores.firstOrNull { it.id == storeId }
+                            if (hit != null) {
+                                if (storeName.isNullOrBlank()) storeName = hit.name
+                                storePhone   = hit.phone
+                                storeAddress = hit.address
+                                storeHours   = hit.open_hours
+                                runCatching { StoreCatalog.put(storeId, hit.name) }
+                            }
+                        }
                     }
+                }
+                renderStoreBlock(storeName ?: "—", storePhone ?: "—", storeAddress ?: "—", storeHours ?: "—")
 
-                // 店家名稱：快取優先，否則退為「門市 #id」或 "—"
-                val storeName = resolveStoreName(api, detail.storeId)
+                /* ---------- 餐點內容 ---------- */
+                val apiLines = (detail.items ?: emptyList()).map { it.toCartLine() }
+                val snapshot = com.example.drinks.store.CartManager.lastSnapshotLines()
 
-                // 餐點：後端 items -> CartLine
-                lines = (detail.items ?: emptyList()).map { it.toCartLine() }
+                // 規則：若 API 行項「全部都沒有加料」但快照有加料，則用快照顯示（以補齊加料）
+                val apiHasAnyToppings = apiLines.any { it.selected.toppings.isNotEmpty() }
+                lines = when {
+                    apiLines.isNotEmpty() && apiHasAnyToppings -> apiLines
+                    snapshot.isNotEmpty() -> snapshot
+                    else -> apiLines
+                }
 
-                // 總額：以後端 total 優先，沒有就以餐點重算
+                // 若品名其實是「數字 ID」，補查產品名稱
+                withContext(Dispatchers.IO) { resolveProductNamesIfNeeded(api) }
+
+                expanded = lines.size <= 3
+                renderItemsPreview(expanded)
+
+                /* ---------- 訂單資訊（後端優先；無則讀 navArgs；付款方式固定顯示「現金」） ---------- */
+                val args = requireArguments()
+                val pickupMethod = when ((detail.pickupMethod ?: args.getString("pickupMethod"))?.lowercase()) {
+                    "pickup", "自取"   -> "自取"
+                    "delivery", "外送" -> "外送"
+                    else -> "—"
+                }
+                val pickupTime = formatIsoToTpe(detail.pickupTime)
+                    ?: args.getString("pickupTime")
+                    ?: formatIsoToTpe(detail.createdAt) ?: "—"
+
+                val buyerName  = detail.buyerName ?: args.getString("buyerName") ?: "—"
+                val buyerPhone = detail.buyerPhone ?: args.getString("buyerPhone") ?: "—"
+
+                // 依需求：不論後端回什麼，都顯示「現金」
+                val paymentText = "現金"
+
+                val orderNote   = detail.orderNote ?: args.getString("orderNote").orEmpty()
+
                 val totalFromApi = moneyStringToInt(detail.total)
                 val displayTotal = if (totalFromApi > 0) totalFromApi else computeTotalFromLines()
 
-                // 時間
-                val displayTime = formatIsoToTpe(detail.createdAt) ?: (detail.createdAt ?: "—")
-
-                // 付款/買家（後端若沒有，就保持「—」並自動隱藏）
-                val buyer = "—"
-                val phone = "—"
-                val pay   = "—"
-                val note  = ""
-
-                // Render
-                renderStoreBlock(storeName)
                 renderOrderBlock(
-                    pickupMethod = "自取",
-                    pickupTime   = displayTime,
-                    buyerName    = buyer,
-                    buyerPhone   = phone,
-                    paymentMethod= pay,
-                    orderNote    = note,
+                    pickupMethod = pickupMethod,
+                    pickupTime   = pickupTime,
+                    buyerName    = buyerName,
+                    buyerPhone   = buyerPhone,
+                    paymentMethod= paymentText,
+                    orderNote    = orderNote,
                     total        = displayTotal
                 )
-                expanded = lines.size <= 3
-                renderItemsPreview(expanded)
 
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "載入失敗：${e.message}", Toast.LENGTH_SHORT).show()
@@ -169,13 +179,13 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
         }
     }
 
-    /* === Render 區 === */
+    /* ===== Render ===== */
 
-    private fun renderStoreBlock(storeName: String) {
-        tvStoreName.text    = storeName
-        tvStorePhone.text   = "電話：02-12345678"
-        tvStoreAddress.text = "地址：新北市板橋區XX路XX號"
-        tvStoreHours.text   = "營業時間：09:00 - 22:00"
+    private fun renderStoreBlock(name: String, phone: String, address: String, hours: String) {
+        tvStoreName.text    = name
+        tvStorePhone.text   = "電話：${if (phone.isBlank()) "—" else phone}"
+        tvStoreAddress.text = "地址：${if (address.isBlank()) "—" else address}"
+        tvStoreHours.text   = "營業時間：${if (hours.isBlank()) "—" else hours}"
     }
 
     private fun TextView.setOrHide(prefix: String, value: String) {
@@ -195,11 +205,11 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
         tvPickupMethod.text = "取餐方式：$pickupMethod"
         tvPickupTime.text   = "取餐時間：$pickupTime"
         tvBuyerName.setOrHide("訂購人：", buyerName)
-        tvBuyerPhone.setOrHide("聯絡電話：", buyerPhone)
+        tvBuyerPhone.setOrHide("連絡電話：", buyerPhone)
         tvPaymentMethod.setOrHide("付款方式：", paymentMethod)
 
         if (orderNote.isBlank()) tvOrderNote.visibility = View.GONE
-        else { tvOrderNote.visibility = View.VISIBLE; tvOrderNote.text = "訂單備註：$orderNote" }
+        else { tvOrderNote.visibility = View.VISIBLE; tvOrderNote.text = "備註：$orderNote" }
 
         tvTotalAmount.text = "應付金額：" + formatTWD(total)
     }
@@ -218,12 +228,12 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
 
         val toShow = if (expanded) lines else listOf(lines.first())
         toShow.forEach { l ->
-            val detail = buildList {
-                l.selected.sweet?.takeIf { it.isNotBlank() }?.let { add(it) }
-                l.selected.ice?.takeIf { it.isNotBlank() }?.let { add(it) }
-                if (l.selected.toppings.isNotEmpty()) addAll(l.selected.toppings)
-                l.selected.note?.takeIf { it.isNotBlank() }?.let { add("備註：$it") }
-            }.joinToString("、")
+            val parts = mutableListOf<String>()
+            l.selected.sweet?.takeIf { it.isNotBlank() }?.let { parts += it }
+            l.selected.ice?.takeIf { it.isNotBlank() }?.let { parts += it }
+            if (l.selected.toppings.isNotEmpty()) parts += l.selected.toppings.map { "+$it" }  // ← 顯示加料
+            l.selected.note?.takeIf { it.isNotBlank() }?.let { parts += "備註：$it" }
+            val detail = parts.joinToString("、")
 
             val left  = "${l.qty}  ${l.name}" + if (detail.isNotBlank()) "\n$detail" else ""
             val right = formatTWD(l.subtotal)
@@ -270,22 +280,30 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
         }.getOrNull()
     }
 
-    /* 後端 DTO -> 畫面用 CartLine（單一版本，請保留這個就好） */
-    private fun OrderItemDTO.toCartLine(): CartLine {
-        // 後端 product 可能是「名稱」或「ID 字串」
-        val parsedId = this.productName?.toIntOrNull()
-        val productId = parsedId ?: 0
+    /* 若 name 是產品 ID → 用 products/{id}/ 補真名 */
+    private suspend fun resolveProductNamesIfNeeded(api: Api) {
+        val ids = lines.mapNotNull { it.name.toIntOrNull()?.takeIf { x -> x > 0 } }.distinct()
+        if (ids.isEmpty()) return
 
-        // 名稱：先用後端字串；若是純數字找不到名稱，暫用「品項 #id」
-        val displayName = when {
-            !this.productName.isNullOrBlank() && parsedId == null -> this.productName!!
-            parsedId != null -> "品項 #$parsedId"   // 之後若接 ProductCatalog 可換真名
-            else -> "—"
+        val idToName = mutableMapOf<Int, String>()
+        for (pid in ids) {
+            runCatching { api.getProduct(pid) }.onSuccess { p -> idToName[pid] = p.name }
         }
+        if (idToName.isEmpty()) return
 
-        val lblSweet = this.sweet?.let { Options.label(it) }
-        val lblIce   = this.ice?.let { Options.label(it) }
-        val lblTops  = (this.toppings ?: emptyList()).map { Options.label(it) }.toMutableList()
+        lines = lines.map { l ->
+            val pid = l.name.toIntOrNull()
+            if (pid != null && idToName[pid] != null) l.copy(name = idToName[pid]!!) else l
+        }
+    }
+
+    /* 後端 DTO -> CartLine */
+    private fun OrderItemDTO.toCartLine(): CartLine {
+        val displayName = this.productName?.takeIf { it.isNotBlank() } ?: "—"
+
+        val lblSweet = this.sweet?.let { Options.label(it) ?: it }
+        val lblIce   = this.ice?.let   { Options.label(it) ?: it }
+        val lblTops  = (this.toppings ?: emptyList()).map { code -> Options.label(code) ?: code }
 
         val unit     = moneyStringToInt(this.unitPrice)
         val optPrice = (this.toppings ?: emptyList()).sumOf { id -> Options.toppings[id] ?: 0 }
@@ -293,19 +311,19 @@ class OrderDetailFragment : Fragment(R.layout.fragment_order_detail) {
         val lineKey  = "${lblSweet.orEmpty()}|${lblIce.orEmpty()}|${lblTops.sorted().joinToString(",")}|${this.note.orEmpty()}"
 
         return CartLine(
-            productId   = productId,
-            name        = displayName,
-            qty         = this.qty,
-            unitPrice   = unit,
-            optionsPrice= optPrice,
-            selected    = SelectedOptions(
+            productId    = 0,
+            name         = displayName,
+            qty          = this.qty,
+            unitPrice    = unit,
+            optionsPrice = optPrice,
+            selected     = SelectedOptions(
                 sweet    = lblSweet,
                 ice      = lblIce,
-                toppings = lblTops,
+                toppings = lblTops.toMutableList(),
                 note     = this.note
             ),
-            lineKey     = lineKey,
-            imageUrl    = null
+            lineKey      = lineKey,
+            imageUrl     = null
         )
     }
 }

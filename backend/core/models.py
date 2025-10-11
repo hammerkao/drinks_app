@@ -116,6 +116,15 @@ class Order(models.Model):
     store = models.ForeignKey("core.Store", on_delete=models.PROTECT,
                               related_name="orders", null=True, blank=True)
 
+    # 新增 ↓↓↓
+    buyer_name     = models.CharField(max_length=30, blank=True, null=True)
+    buyer_phone    = models.CharField(max_length=20, blank=True, null=True)
+    payment_method = models.CharField(max_length=20, blank=True, null=True)   # "cash/card/linepay/..."
+    paid           = models.BooleanField(default=False)
+    pickup_method  = models.CharField(max_length=20, blank=True, null=True)   # "pickup/delivery"
+    pickup_time    = models.DateTimeField(blank=True, null=True)
+    # ↑↑↑  
+
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.CREATED)
     total  = models.DecimalField(max_digits=12, decimal_places=2,
                                  validators=[MinValueValidator(0)], default=0)

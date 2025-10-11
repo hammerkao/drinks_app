@@ -14,29 +14,17 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.drinks.R
 import com.example.drinks.data.json.GsonProvider.gson
+import com.example.drinks.data.model.OrderCreateRequest
+import com.example.drinks.data.model.OrderItemRequest
+import com.example.drinks.data.net.Api as DrinksApi
+import com.example.drinks.net.NetCore
 import com.example.drinks.store.CartManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import com.example.drinks.data.json.GsonProvider.gson
-import java.math.BigDecimal
-
-
-
-// networking
-import com.example.drinks.data.net.Api as DrinksApi
-import com.example.drinks.net.NetCore
-
-// DTO（方法 B 會用到）
-import com.example.drinks.data.model.OrderCreateRequest
-import com.example.drinks.data.model.OrderDTO
-import com.example.drinks.data.model.OrderItemRequest
-import java.math.RoundingMode
 
 class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
 
@@ -52,7 +40,7 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
     // 餐點內容（可展開）
     private lateinit var previewContainer: LinearLayout
     private lateinit var btnToggleItems: ImageButton
-    private var expanded: Boolean = false
+    private var expanded = false
 
     // 訂單內容
     private lateinit var tvPickupMethod: TextView
@@ -74,12 +62,10 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
 
         tvOrderNote = view.findViewById(R.id.tvOrderNote)
 
-        // Toolbar（自訂返回鍵 + 置中標題）
+        // Toolbar
         toolbar = view.findViewById(R.id.toolbar)
-        val btnBack = view.findViewById<ImageButton>(R.id.btnNavBack)
-        val tvTitle = view.findViewById<TextView>(R.id.tvToolbarTitle)
-        tvTitle.text = "訂單結算"
-        btnBack.setOnClickListener { findNavController().popBackStack() }
+        view.findViewById<TextView>(R.id.tvToolbarTitle).text = "訂單結算"
+        view.findViewById<ImageButton>(R.id.btnNavBack).setOnClickListener { findNavController().popBackStack() }
 
         // 綁定店家資訊
         tvStoreName    = view.findViewById(R.id.tvStoreName)
@@ -108,7 +94,7 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
         renderOrderBlock()
         renderItemsPreview(expanded = false)
 
-        // 監聽購物車變更（回前頁修改後再回來也會更新）
+        // 監聽購物車變更
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 CartManager.changes.collect {
@@ -119,16 +105,15 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
             }
         }
 
-        // 展開/收合
         btnToggleItems.setOnClickListener {
             expanded = !expanded
             renderItemsPreview(expanded)
         }
 
-        // 修改 -> 回前一頁（訂單結算）
+        // 修改 -> 回前一頁
         btnModify.setOnClickListener { findNavController().popBackStack() }
 
-        // 送出訂單（方法 B：直接送 items 給 /api/orders/）
+        // 送出訂單（方法 B）
         btnSubmit.setOnClickListener {
             if (CartManager.isEmpty()) {
                 Toast.makeText(requireContext(), "購物車為空", Toast.LENGTH_SHORT).show()
@@ -138,64 +123,67 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
             MaterialAlertDialogBuilder(requireContext())
                 .setMessage("確定送出訂單？")
                 .setNegativeButton("取消", null)
-                .setPositiveButton("確定") { _, _ ->
-                    // 真的送單
-                    btnSubmit.isEnabled = false
-                    btnSubmit.text = "送出中..."
-
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        try {
-                            val api = obtainApi()
-
-                            // 1) 先拍「成功頁要用的品項快照」
-                            val snapshot = CartManager.snapshotForSuccessPage()
-
-                            // 2) 取分店 id
-                            val storeId = arguments?.getInt("store_id")?.takeIf { it > 0 }
-                                ?: CartManager.currentStoreId
-                                ?: throw IllegalStateException("未取得分店資訊")
-
-                            // 3) 建請求並送出
-                            val req = buildOrderRequest(storeId)
-                            val created = api.createOrder(req)
-
-                            // 4) 成功後再清空購物車
-                            CartManager.clear()
-
-                            // 5) 導頁：把快照轉成 JSON 丟過去
-                            val totalInt = (created.total ?: "").filter { it.isDigit() }.toIntOrNull() ?: 0
-                            val args = Bundle().apply {
-                                putInt("orderId", created.id)
-                                putInt("total", totalInt)
-                                putString("storeName", CartManager.currentStoreName ?: "—")
-                                putString("pickupMethod", arguments?.getString("pickupMethod") ?: "自取")
-                                putString("paymentMethod", arguments?.getString("paymentMethod") ?: "—")
-                                putString("buyerName", arguments?.getString("buyerName") ?: "—")
-                                putString("buyerPhone", arguments?.getString("buyerPhone") ?: "—")
-                                putString("orderNote", arguments?.getString("orderNote").orEmpty())
-                                putString("createdAt", created.createdAt)   // 成功頁優先用後端時間
-                                putString("itemsJson", com.example.drinks.data.json.GsonProvider.gson.toJson(snapshot))
-                            }
-                            findNavController().navigate(
-                                R.id.action_checkoutConfirm_to_orderSuccess, args
-                            )
-                        } catch (e: Exception) {
-                            MaterialAlertDialogBuilder(requireContext())
-                                .setMessage("送出失敗：${e.message ?: "未知錯誤"}")
-                                .setPositiveButton(android.R.string.ok, null)
-                                .show()
-                        } finally {
-                            btnSubmit.isEnabled = true
-                            btnSubmit.text = "送出訂單"
-                        }
-                    }
-                }
+                .setPositiveButton("確定") { _, _ -> submitOrder() }
                 .show()
         }
-
     }
 
-    // ======= Render =======
+    private fun submitOrder() {
+        btnSubmit.isEnabled = false
+        btnSubmit.text = "送出中..."
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val api = obtainApi()
+
+                // 成功頁要用的快照
+                val snapshot = CartManager.snapshotForSuccessPage()
+
+                // 分店 ID
+                val storeId = arguments?.getInt("store_id")?.takeIf { it > 0 }
+                    ?: CartManager.currentStoreId
+                    ?: throw IllegalStateException("未取得分店資訊")
+
+                // 組請求並送出
+                val req = buildOrderRequest(storeId)
+                val created = api.createOrder(req)
+
+                // 清空購物車
+                CartManager.clear()
+
+                // 導頁：把快照與資訊帶到成功頁
+                val totalInt = moneyStringToInt(created.total)
+                val args = Bundle().apply {
+                    // 兩個 key 都塞，避免另一頁用不同命名
+                    putInt("order_id", created.id)
+                    putInt("orderId",  created.id)
+
+                    putInt("total", totalInt)
+                    putString("storeName", CartManager.currentStoreName ?: "—")
+                    putString("pickupMethod", arguments?.getString("pickupMethod") ?: "自取")
+                    putString("paymentMethod", arguments?.getString("paymentMethod") ?: "現金")
+                    putString("buyerName", arguments?.getString("buyerName") ?: "—")
+                    putString("buyerPhone", arguments?.getString("buyerPhone") ?: "—")
+                    putString("orderNote", arguments?.getString("orderNote").orEmpty())
+                    putString("createdAt", created.createdAt)      // 成功頁時間以後端為準
+                    putString("itemsJson", gson.toJson(snapshot))  // 成功頁顯示用快照
+                }
+                findNavController().navigate(
+                    R.id.action_checkoutConfirm_to_orderSuccess, args
+                )
+            } catch (e: Exception) {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setMessage("送出失敗：${e.message ?: "未知錯誤"}")
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+            } finally {
+                btnSubmit.isEnabled = true
+                btnSubmit.text = "送出訂單"
+            }
+        }
+    }
+
+    /* ================= Render ================= */
 
     private fun renderStoreBlock() {
         tvStoreName.text    = CartManager.currentStoreName ?: "未選擇分店"
@@ -244,18 +232,16 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
 
         val toShow = if (expanded) lines else listOf(lines.first())
         toShow.forEach { l ->
-            val qty = l.qty
-            val name = l.name
-            val detail = buildList {
-                l.selected.sweet?.takeIf { it.isNotBlank() }?.let { add(it) }
-                l.selected.ice?.takeIf { it.isNotBlank() }?.let { add(it) }
-                if (l.selected.toppings.isNotEmpty()) addAll(l.selected.toppings)
-                l.selected.note?.takeIf { it.isNotBlank() }?.let { add("備註：$it") }
-            }.joinToString("、")
+            val parts = mutableListOf<String>()
+            l.selected.sweet?.takeIf { it.isNotBlank() }?.let { parts += it }
+            l.selected.ice?.takeIf { it.isNotBlank() }?.let { parts += it }
+            if (l.selected.toppings.isNotEmpty()) parts += l.selected.toppings.map { "+$it" }
+            l.selected.note?.takeIf { it.isNotBlank() }?.let { parts += "備註：$it" }
+            val detail = parts.joinToString("、")
 
-            val left = "$qty  $name" + if (detail.isNotBlank()) "\n$detail" else ""
+            val left  = "${l.qty}  ${l.name}" + if (detail.isNotBlank()) "\n$detail" else ""
             val right = formatTWD((l.unitPrice + l.optionsPrice) * l.qty)
-            addRow(leftText = left, rightText = right)
+            addRow(left, right)
         }
     }
 
@@ -277,10 +263,10 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
         return sdf.format(java.util.Date())
     }
 
-    // ======= 方法 B：組下單 Request（直接送 items） =======
+    /* =============== 方法 B：組下單 Request =============== */
     private fun buildOrderRequest(storeId: Int): OrderCreateRequest {
-        val uiPickup  = arguments?.getString("pickupMethod") ?: "自取"
-        val uiPayment = arguments?.getString("paymentMethod") ?: "現金"
+        val uiPickup   = arguments?.getString("pickupMethod") ?: "自取"
+        val uiPayment  = arguments?.getString("paymentMethod") ?: "現金"
         val buyerName  = arguments?.getString("buyerName") ?: "—"
         val buyerPhone = arguments?.getString("buyerPhone") ?: "—"
         val orderNote  = arguments?.getString("orderNote").orEmpty()
@@ -288,7 +274,8 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
         val pickupCode = when (uiPickup) { "自取" -> "pickup"; "外送" -> "delivery"; else -> "pickup" }
         val paymentCode = when (uiPayment) {
             "現金" -> "cash"; "信用卡" -> "card";
-            "LinePay","LINE Pay" -> "linepay"; "Apple Pay" -> "applepay"; else -> "cash"
+            "LinePay","LINE Pay" -> "linepay"; "Apple Pay" -> "applepay"; "Google Pay" -> "googlepay";
+            else -> "cash"
         }
 
         fun makeOptionsKey(sweet: String?, ice: String?, toppings: List<String>?, note: String?): String {
@@ -310,25 +297,31 @@ class CheckoutConfirmFragment : Fragment(R.layout.fragment_checkout_confirm) {
                 ice          = ice,
                 toppings     = tops,
                 note         = note,
-                optionsKey   = makeOptionsKey(sweet, ice, tops, note) // ★ 穩定鍵
+                optionsKey   = makeOptionsKey(sweet, ice, tops, note)
             )
         }
 
+        // 取現在時間（台北時區）為取餐時間
         val tz  = java.util.TimeZone.getTimeZone("Asia/Taipei")
         val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.TAIWAN)
             .apply { timeZone = tz }
             .format(java.util.Date())
 
         return OrderCreateRequest(
-            storeId      = storeId,         // ★ 一定要帶
-            pickupMethod = pickupCode,
-            pickupTime   = iso,
-            buyerName    = buyerName,
-            buyerPhone   = buyerPhone,
-            paymentMethod= paymentCode,
-            orderNote    = orderNote.ifBlank { null },
-            items        = items
+            storeId       = storeId,
+            pickupMethod  = pickupCode,
+            pickupTime    = iso,
+            buyerName     = buyerName,
+            buyerPhone    = buyerPhone,
+            paymentMethod = paymentCode,
+            orderNote     = orderNote.ifBlank { null },
+            items         = items
         )
     }
 
+    /* ===== 小工具 ===== */
+    private fun moneyStringToInt(s: String?): Int {
+        if (s.isNullOrBlank()) return 0
+        return s.toBigDecimalOrNull()?.setScale(0, java.math.RoundingMode.HALF_UP)?.toInt() ?: 0
+    }
 }
