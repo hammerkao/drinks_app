@@ -224,6 +224,7 @@
         android:layout_margin="16dp"
         android:text="查看訂單"
         android:textColor="@android:color/white"
+        android:backgroundTint="@color/brand_gold"
         app:cornerRadius="28dp"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
